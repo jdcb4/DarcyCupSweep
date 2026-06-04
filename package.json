@@ -1,0 +1,38 @@
+{
+  "name": "world-cup-tracker",
+  "version": "0.2.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app/server.ts",
+    "start": "node dist/app/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm test && pnpm run build"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "dotenv": "^17.4.2",
+    "hono": "^4.7.11",
+    "zod": "^3.25.56"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@types/node": "^22.15.30",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1",
+    "vitest": "^3.2.2"
+  },
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=9.15.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

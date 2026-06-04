@@ -1,0 +1,28 @@
+{
+  "status": "pre-sweep",
+  "buyInUsd": 100,
+  "teamsPerParticipant": 3,
+  "prizesUsd": {
+    "champion": 800,
+    "runnerUp": 200,
+    "groupWinner": 50
+  },
+  "participants": [
+    { "name": "Darcy", "teams": [] },
+    { "name": "Joe", "teams": [] },
+    { "name": "Kathleen", "teams": [] },
+    { "name": "Joel", "teams": [] },
+    { "name": "Ed", "teams": [] },
+    { "name": "Lemmo", "teams": [] },
+    { "name": "Dave", "teams": [] },
+    { "name": "George", "teams": [] },
+    { "name": "Rachael", "teams": [] },
+    { "name": "Zach", "teams": [] },
+    { "name": "Emma", "teams": [] },
+    { "name": "Paul", "teams": [] },
+    { "name": "Louise", "teams": [] },
+    { "name": "Mitch", "teams": [] },
+    { "name": "Fraser", "teams": [] },
+    { "name": "Bree", "teams": [] }
+  ]
+}
