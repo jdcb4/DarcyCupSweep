@@ -226,7 +226,7 @@ export function renderAdminPage(
         <section class="admin-participant" data-participant-index="${index}">
           <div class="admin-participant-heading">
             ${renderParticipantName(participant.name, index)}
-            <span>${participant.teams.length}/${sweep.teamsPerParticipant}</span>
+            <span class="admin-team-count">${participant.teams.length}/${sweep.teamsPerParticipant}</span>
           </div>
           <div class="team-dropzone" data-team-dropzone="${index}" aria-label="${escapeHtml(participant.name)} teams">
             ${participant.teams

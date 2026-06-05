@@ -1037,6 +1037,16 @@ tbody th {
   gap: 10px;
 }
 
+.admin-team-count {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
 .admin-participant textarea {
   width: 100%;
   min-height: 104px;

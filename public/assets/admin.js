@@ -4,7 +4,9 @@ for (const chip of document.querySelectorAll('.nation-chip')) {
   wireChip(chip);
 }
 
-for (const zone of document.querySelectorAll('[data-team-dropzone], [data-team-pool]')) {
+for (const zone of document.querySelectorAll(
+  '[data-team-dropzone], [data-team-pool]'
+)) {
   zone.addEventListener('dragover', (event) => {
     event.preventDefault();
     zone.classList.add('drag-over');
@@ -20,7 +22,10 @@ for (const zone of document.querySelectorAll('[data-team-dropzone], [data-team-p
       return;
     }
 
-    if (zone.dataset.teamDropzone && zone.querySelectorAll('.nation-chip').length >= 3) {
+    if (
+      zone.dataset.teamDropzone &&
+      zone.querySelectorAll('.nation-chip').length >= 3
+    ) {
       return;
     }
 
@@ -44,20 +49,29 @@ function wireChip(chip) {
 }
 
 function syncAdminForm() {
-  for (const participant of document.querySelectorAll('[data-participant-index]')) {
+  for (const participant of document.querySelectorAll(
+    '[data-participant-index]'
+  )) {
     const index = participant.dataset.participantIndex;
     const input = participant.querySelector(`input[name="teams-${index}"]`);
-    const teams = [...participant.querySelectorAll('[data-team]')].map((chip) => chip.dataset.team ?? '');
+    const teams = [...participant.querySelectorAll('[data-team]')].map(
+      (chip) => chip.dataset.team ?? ''
+    );
 
     input.value = teams.join('\n');
-    participant.querySelector('.admin-participant-heading span').textContent = `${teams.length}/3`;
+    const count = participant.querySelector('.admin-team-count');
+
+    if (count) {
+      count.textContent = `${teams.length}/3`;
+    }
   }
 
   const availableCount = document.querySelector('#available-count');
   const pool = document.querySelector('[data-team-pool]');
 
   if (availableCount && pool) {
-    availableCount.textContent = String(pool.querySelectorAll('.nation-chip').length);
+    availableCount.textContent = String(
+      pool.querySelectorAll('.nation-chip').length
+    );
   }
 }
-

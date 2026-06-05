@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.2 - 2026-06-05
+
+- Fixed the admin allocation page so participant names remain visible after drag/drop form sync.
+- Styled the admin team count as a distinct badge beside each participant name.
+
 ## 0.8.1 - 2026-06-05
 
 - Reworked the pre-sweep dashboard to show a compact participant roster and a single example allocation preview instead of repeated placeholder team cards.
