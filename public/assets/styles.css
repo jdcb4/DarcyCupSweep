@@ -221,6 +221,50 @@ h2 {
   font-size: 0.92rem;
 }
 
+.draw-countdown {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  margin: 12px 0;
+  padding: 18px;
+  color: var(--text-on-strong);
+  background:
+    linear-gradient(135deg, rgb(224 184 79 / 0.18), transparent 48%),
+    linear-gradient(90deg, var(--surface-strong), var(--surface-raised));
+  border: 1px solid rgb(224 184 79 / 0.32);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+
+.draw-countdown h2 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+
+.draw-countdown-copy p:last-child {
+  max-width: 520px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.draw-countdown-clock {
+  display: grid;
+  gap: 4px;
+  min-width: 240px;
+  text-align: right;
+}
+
+.draw-countdown-clock strong {
+  font-size: clamp(2.3rem, 7vw, 4.2rem);
+  line-height: 0.95;
+}
+
+.draw-countdown-clock time {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
 .spotlight-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1111,6 +1155,7 @@ button:not(.nation-chip) {
 
 @media (max-width: 860px) {
   .dashboard-header,
+  .draw-countdown,
   .content-grid,
   .spotlight-grid,
   .countdown-grid,
@@ -1157,6 +1202,15 @@ button:not(.nation-chip) {
 
   .dashboard-header {
     padding: 16px;
+  }
+
+  .draw-countdown {
+    align-items: start;
+  }
+
+  .draw-countdown-clock {
+    min-width: 0;
+    text-align: left;
   }
 
   .dashboard-header img {

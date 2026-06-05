@@ -1,5 +1,6 @@
 import type { Nation } from '../data/nations.js';
 import { nations as allNations } from '../data/nations.js';
+import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
@@ -66,6 +67,8 @@ export function renderDashboard(
           </div>
         </div>
       </section>
+
+      ${isActive ? '' : renderDrawCountdown()}
 
       <section class="spotlight-grid" aria-label="Sweep highlights">
         <article class="spotlight-card">
@@ -166,6 +169,22 @@ export function renderDashboard(
     <script src="/assets/app.js" type="module"></script>
   </body>
 </html>`;
+}
+
+function renderDrawCountdown(): string {
+  const draw = tournamentSchedule.sweepDraw;
+
+  return `<section class="draw-countdown" aria-labelledby="draw-countdown-title">
+    <div class="draw-countdown-copy">
+      <p class="eyebrow">Next milestone</p>
+      <h2 id="draw-countdown-title">Sweep draw</h2>
+      <p>Allocations unlock after the draw is finalised in admin.</p>
+    </div>
+    <div class="draw-countdown-clock">
+      <strong data-countdown-target="${draw.iso}">Calculating</strong>
+      <time datetime="${draw.iso}">${escapeHtml(draw.display)}</time>
+    </div>
+  </section>`;
 }
 
 export function renderMatchesPage(apiPath = '/api/sweep'): string {

@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.3 - 2026-06-05
+
+- Restored the pre-sweep draw countdown as the lead dashboard item until the sweep is activated.
+- Used the canonical 8:00 PM AEST, Thursday 11 June 2026 draw time from tournament configuration.
+
 ## 0.8.2 - 2026-06-05
 
 - Fixed the admin allocation page so participant names remain visible after drag/drop form sync.
