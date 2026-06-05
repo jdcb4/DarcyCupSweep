@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { nations } from '../data/nations.js';
 import { calculateLeaderboard, getActivationIssues, prizePoolUsd, type Sweep, type WorldCupSnapshot } from '../domain/sweep.js';
+import { buildSweepTracking } from '../domain/tracking.js';
+import { parseOpenFootballMatches } from '../services/worldCupProvider.js';
 
 const sweep: Sweep = {
   status: 'active',
@@ -110,5 +113,137 @@ describe('sweep domain', () => {
         'Sweep needs 48 total teams before activation.'
       ])
     );
+  });
+
+  it('parses OpenFootball scheduled fixtures into UTC match records', () => {
+    const matches = parseOpenFootballMatches(`
+▪ Group A
+Thu June 11
+  13:00 UTC-6     Mexico       v South Africa        @ Mexico City
+▪ Final
+Sun Jul 19
+  (104) 15:00 UTC-4    W101 v W102    @ New York/New Jersey (East Rutherford)
+`);
+
+    expect(matches).toEqual([
+      {
+        id: 'openfootball-group-a-6-11-13-00-mexico-south-africa',
+        utcDate: '2026-06-11T19:00:00.000Z',
+        round: 'Group A',
+        status: 'scheduled',
+        homeTeam: 'Mexico',
+        awayTeam: 'South Africa',
+        homeGoals: null,
+        awayGoals: null,
+        winnerTeam: null
+      },
+      {
+        id: 'openfootball-104',
+        utcDate: '2026-07-19T19:00:00.000Z',
+        round: 'Final - New York/New Jersey (East Rutherford)',
+        status: 'scheduled',
+        homeTeam: 'W101',
+        awayTeam: 'W102',
+        homeGoals: null,
+        awayGoals: null,
+        winnerTeam: null
+      }
+    ]);
+  });
+
+  it('parses OpenFootball post-game scores and winners', () => {
+    const matches = parseOpenFootballMatches(`
+\u25aa Group D
+Tue Nov 29
+  22:00 UTC-5     Australia 2-1 (1-0) Denmark @ Dallas
+  22:00 UTC-5     Tunisia 1-1 France @ Houston
+`);
+
+    expect(matches).toMatchObject([
+      {
+        status: 'finished',
+        homeTeam: 'Australia',
+        awayTeam: 'Denmark',
+        homeGoals: 2,
+        awayGoals: 1,
+        winnerTeam: 'Australia'
+      },
+      {
+        status: 'finished',
+        homeTeam: 'Tunisia',
+        awayTeam: 'France',
+        homeGoals: 1,
+        awayGoals: 1,
+        winnerTeam: null
+      }
+    ]);
+  });
+
+  it('uses OpenFootball penalty results to resolve tied knockout winners', () => {
+    const matches = parseOpenFootballMatches(`
+\u25aa Round of 16
+Mon Dec 5
+  18:00 Japan 1-1 a.e.t (1-1, 1-0), 1-3 pen.
+Croatia @ Al Janoub Stadium, Al Wakrah
+`);
+
+    expect(matches[0]).toMatchObject({
+      status: 'finished',
+      homeTeam: 'Japan',
+      awayTeam: 'Croatia',
+      homeGoals: 1,
+      awayGoals: 1,
+      winnerTeam: 'Croatia'
+    });
+  });
+
+  it('tracks participant teams left, next matches, and match owners', () => {
+    const tracking = buildSweepTracking(
+      {
+        ...sweep,
+        participants: sweep.participants.map((participant) =>
+          participant.name === 'Darcy' ? { ...participant, teams: ['Argentina', 'Australia', 'Brazil'] } : participant
+        )
+      },
+      {
+        source: 'test',
+        updatedAt: '2026-06-20T00:00:00.000Z',
+        standings: [],
+        matches: [
+          {
+            id: 'ko',
+            utcDate: '2026-07-01T00:00:00.000Z',
+            round: 'Round of 32',
+            status: 'finished',
+            homeTeam: 'Argentina',
+            awayTeam: 'Australia',
+            homeGoals: 2,
+            awayGoals: 0,
+            winnerTeam: 'Argentina'
+          },
+          {
+            id: 'next',
+            utcDate: '2026-07-03T00:00:00.000Z',
+            round: 'Quarter-final',
+            status: 'scheduled',
+            homeTeam: 'Argentina',
+            awayTeam: 'Brazil',
+            homeGoals: null,
+            awayGoals: null,
+            winnerTeam: null
+          }
+        ]
+      },
+      nations
+    );
+
+    const darcy = tracking.participants.find((participant) => participant.participantName === 'Darcy');
+
+    expect(darcy?.teamsLeft).toBe(2);
+    expect(darcy?.nextMatch?.id).toBe('next');
+    expect(tracking.upcomingMatches[0]?.participantNames).toEqual(['Darcy', 'Joe']);
+    expect(tracking.upcomingMatches[0]?.homeParticipantName).toBe('Darcy');
+    expect(tracking.upcomingMatches[0]?.awayParticipantName).toBe('Joe');
+    expect(tracking.nations.find((team) => team.nation.name === 'Australia')?.status).toBe('eliminated');
   });
 });

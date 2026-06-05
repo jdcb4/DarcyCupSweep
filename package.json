@@ -1,11 +1,13 @@
 {
   "name": "world-cup-tracker",
-  "version": "0.2.2",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/app/server.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
     "start": "node dist/app/server.js",
+    "start:railway": "pnpm run db:migrate && pnpm run start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -18,11 +20,13 @@
     "@hono/node-server": "^1.14.4",
     "dotenv": "^17.4.2",
     "hono": "^4.7.11",
+    "pg": "^8.21.0",
     "zod": "^3.25.56"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "@types/node": "^22.15.30",
+    "@types/pg": "^8.20.0",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
     "tsx": "^4.19.4",

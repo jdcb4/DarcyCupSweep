@@ -25,7 +25,7 @@ export function requireAdmin(context: Context): Response | null {
   return null;
 }
 
-export async function parseAdminSweepForm(formData: FormData, currentSweep: Sweep): Promise<Sweep> {
+export async function parseAdminSweepForm(formData: FormData, currentSweep: Sweep, allowedTeamNames?: string[]): Promise<Sweep> {
   const participants = currentSweep.participants.map((participant, index) => ({
     name: participant.name,
     teams: parseTeamText(String(formData.get(`teams-${index}`) ?? ''))
@@ -38,7 +38,7 @@ export async function parseAdminSweepForm(formData: FormData, currentSweep: Swee
   });
 
   if (nextSweep.status === 'active') {
-    const activationIssues = getActivationIssues(nextSweep);
+    const activationIssues = getActivationIssues(nextSweep, allowedTeamNames);
 
     if (activationIssues.length > 0) {
       throw new AdminValidationError(activationIssues, {

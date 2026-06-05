@@ -5,9 +5,8 @@
     "buildCommand": "pnpm install --frozen-lockfile && pnpm run build"
   },
   "deploy": {
-    "startCommand": "pnpm run start",
+    "startCommand": "pnpm run start:railway",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
   }
 }
-

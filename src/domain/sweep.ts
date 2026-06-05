@@ -142,9 +142,10 @@ export function expectedTeamsCount(sweep: Sweep): number {
   return sweep.participants.length * sweep.teamsPerParticipant;
 }
 
-export function getActivationIssues(sweep: Sweep): string[] {
+export function getActivationIssues(sweep: Sweep, allowedTeamNames?: string[]): string[] {
   const issues: string[] = [];
   const teamCounts = new Map<string, number>();
+  const allowedTeams = allowedTeamNames ? new Set(allowedTeamNames.map(normalizeTeamName)) : null;
 
   for (const participant of sweep.participants) {
     if (participant.teams.length !== sweep.teamsPerParticipant) {
@@ -154,6 +155,10 @@ export function getActivationIssues(sweep: Sweep): string[] {
     for (const team of participant.teams) {
       const normalized = normalizeTeamName(team);
       teamCounts.set(normalized, (teamCounts.get(normalized) ?? 0) + 1);
+
+      if (allowedTeams && !allowedTeams.has(normalized)) {
+        issues.push(`${team} is not in the participating nations list.`);
+      }
     }
   }
 
@@ -170,6 +175,6 @@ export function getActivationIssues(sweep: Sweep): string[] {
   return issues;
 }
 
-function normalizeTeamName(teamName: string): string {
+export function normalizeTeamName(teamName: string): string {
   return teamName.trim().toLocaleLowerCase('en-US');
 }

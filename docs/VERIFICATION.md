@@ -14,6 +14,18 @@ pnpm run verify
 
 The combined `verify` script runs typecheck, lint, tests, and build.
 
+## Database smoke check
+
+When persistence changes, run a local Postgres smoke check:
+
+```powershell
+docker compose up -d postgres
+$env:DATABASE_URL = "postgres://worldcup:worldcup@localhost:55432/worldcup"
+pnpm run db:migrate
+```
+
+Then start the app or call the repository with `DATABASE_URL` set to confirm the Postgres path is active.
+
 ## Codebase analysis
 
 For significant implementation changes, consider adding Fallow or similar deterministic analysis:
@@ -40,4 +52,3 @@ These may report false positives for framework entrypoints, generated files, and
 
 - Node.js `>=22.13.0`
 - pnpm `>=9.15.0`
-

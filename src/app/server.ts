@@ -5,10 +5,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { AdminValidationError, parseAdminSweepForm, requireAdmin } from './admin.js';
 import { env } from '../config/env.js';
+import { demoFirstDozenResultsSnapshot, demoNoResultsSnapshot, demoSweep } from '../data/demo.js';
+import { nations } from '../data/nations.js';
 import { calculateLeaderboard } from '../domain/sweep.js';
+import { buildSweepTracking } from '../domain/tracking.js';
 import { loadSweep, saveSweep } from '../services/sweepRepository.js';
 import { createWorldCupProvider } from '../services/worldCupProvider.js';
-import { renderAdminPage, renderDashboard } from './html.js';
+import { renderAdminPage, renderDashboard, renderMatchesPage } from './html.js';
 
 export const app = new Hono();
 
@@ -25,6 +28,28 @@ app.get('/', async (context) => {
   return context.html(renderDashboard(sweep));
 });
 
+app.get('/demo/allocated', (context) =>
+  context.html(
+    renderDashboard(demoSweep, {
+      apiPath: '/api/demo/allocated',
+      notice: 'Demo: all teams allocated, no results yet.',
+      demoLinks: true
+    })
+  )
+);
+
+app.get('/demo/results', (context) =>
+  context.html(
+    renderDashboard(demoSweep, {
+      apiPath: '/api/demo/results',
+      notice: 'Demo: all teams allocated, first dozen games completed.',
+      demoLinks: true
+    })
+  )
+);
+
+app.get('/matches', (context) => context.html(renderMatchesPage()));
+
 app.get('/admin', async (context) => {
   const authResponse = requireAdmin(context);
 
@@ -33,7 +58,7 @@ app.get('/admin', async (context) => {
   }
 
   const sweep = await loadSweep();
-  return context.html(renderAdminPage(sweep));
+  return context.html(renderAdminPage(sweep, nations));
 });
 
 app.post('/admin', async (context) => {
@@ -47,13 +72,17 @@ app.post('/admin', async (context) => {
   const formData = await context.req.formData();
 
   try {
-    const nextSweep = await parseAdminSweepForm(formData, sweep);
+    const nextSweep = await parseAdminSweepForm(
+      formData,
+      sweep,
+      nations.map((nation) => nation.name)
+    );
     const savedSweep = await saveSweep(nextSweep);
 
-    return context.html(renderAdminPage(savedSweep, { message: 'Sweep saved.' }));
+    return context.html(renderAdminPage(savedSweep, nations, { message: 'Sweep saved.' }));
   } catch (error) {
     if (error instanceof AdminValidationError) {
-      return context.html(renderAdminPage(error.sweep, { errors: error.issues }), 400);
+      return context.html(renderAdminPage(error.sweep, nations, { errors: error.issues }), 400);
     }
 
     throw error;
@@ -67,9 +96,28 @@ app.get('/api/sweep', async (context) => {
   return context.json({
     sweep,
     leaderboard: calculateLeaderboard(sweep, snapshot),
+    tracking: buildSweepTracking(sweep, snapshot, nations),
     snapshot
   });
 });
+
+app.get('/api/demo/allocated', (context) =>
+  context.json({
+    sweep: demoSweep,
+    leaderboard: calculateLeaderboard(demoSweep, demoNoResultsSnapshot),
+    tracking: buildSweepTracking(demoSweep, demoNoResultsSnapshot, nations),
+    snapshot: demoNoResultsSnapshot
+  })
+);
+
+app.get('/api/demo/results', (context) =>
+  context.json({
+    sweep: demoSweep,
+    leaderboard: calculateLeaderboard(demoSweep, demoFirstDozenResultsSnapshot),
+    tracking: buildSweepTracking(demoSweep, demoFirstDozenResultsSnapshot, nations),
+    snapshot: demoFirstDozenResultsSnapshot
+  })
+);
 
 app.get('/api/world-cup', async (context) => {
   const snapshot = await createWorldCupProvider(env).getSnapshot();

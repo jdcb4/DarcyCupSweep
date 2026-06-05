@@ -91,3 +91,53 @@ Durable architecture and tooling decisions. Use ADR-lite format: each entry is d
 **Rejected alternatives:** Requiring every local command to pass PowerShell environment variables was rejected because it is error-prone. Node's `--env-file` flag was rejected because it would need script-specific wiring for dev and production commands.
 
 **Supersedes:** N/A
+
+## 2026-06-05: OpenFootball schedule provider
+
+**Decision:** Add `RESULTS_PROVIDER=openfootball` using the public-domain `openfootball/worldcup` Football.TXT files.
+
+**Reasoning:** The user requested the OpenFootball option and still wants to keep API-FOOTBALL as a possible paid provider. OpenFootball provides open fixtures that are useful for match countdowns and schedule display without credentials.
+
+**Rejected alternatives:** Replacing API-FOOTBALL was rejected because OpenFootball is not a near-real-time scoring source. Vendoring the dataset was rejected because reading the upstream raw files keeps fixtures current without committing generated data.
+
+**Supersedes:** N/A
+
+## 2026-06-05: Participant avatar sprite
+
+**Decision:** Use one generated 4x4 raster sprite sheet for the 16 participant avatars.
+
+**Reasoning:** A single project-local sprite keeps the UI fast and avoids 16 separate generated image files while still giving each participant a distinct avatar by position.
+
+**Rejected alternatives:** External avatar services were rejected because they add a runtime dependency and privacy/loading risk. Hand-authored SVG placeholders were rejected because the user asked for generated avatars.
+
+**Supersedes:** N/A
+
+## 2026-06-05: Postgres-backed sweep state
+
+**Decision:** Use Railway Postgres for durable sweep state when `DATABASE_URL` is set, while retaining the existing JSON file as a local fallback.
+
+**Reasoning:** The user provisioned a Railway Postgres database and the admin page now edits the live allocation. Those writes must survive deploys and restarts, which Railway source-file writes cannot guarantee. The data is still one small document, so storing the validated sweep state in a JSONB `app_state` row keeps the persistence layer small.
+
+**Rejected alternatives:** A persistent Railway volume was rejected because it would still tie state to filesystem operations and is less portable than a managed database. A fully relational schema was rejected for now because the current data shape is small and the app does not need participant/team history or multi-user querying.
+
+**Supersedes:** 2026-06-05: Local JSON persistence; 2026-06-05: JSON admin writes for sweep allocation
+
+## 2026-06-05: Drag/drop nation allocation
+
+**Decision:** Show all 48 participating nations with flags on `/admin` and allow them to be dragged into each participant's three-team allocation.
+
+**Reasoning:** The sweep draw workflow is easier to audit when every country is visible in one pool and assigned countries move out of that pool. Hidden inputs preserve normal form submission, so the admin workflow does not require a separate client API.
+
+**Rejected alternatives:** Textarea-only entry was rejected because it is more error-prone with 48 teams. A custom SPA admin API was rejected because the current server-rendered form is sufficient.
+
+**Supersedes:** N/A
+
+## 2026-06-05: Derived tracking model
+
+**Decision:** Derive participant tracking, nation status, upcoming match ownership, and recent winners in `src/domain/tracking.ts`.
+
+**Reasoning:** The public UI needs consistent answers for teams left, next participant matches, the next four fixtures, match ownership, and eliminated countries. Keeping this derivation in domain code makes it testable and independent of the Hono/rendering layers.
+
+**Rejected alternatives:** Computing tracking directly in browser JavaScript was rejected because it would duplicate tournament rules and be harder to test. Storing derived status in the database was rejected because provider snapshots can change and the values are cheap to recompute.
+
+**Supersedes:** N/A

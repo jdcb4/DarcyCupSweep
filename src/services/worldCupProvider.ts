@@ -69,6 +69,10 @@ export function createWorldCupProvider(env: AppEnv): WorldCupProvider {
     return new ApiFootballProvider(env);
   }
 
+  if (env.RESULTS_PROVIDER === 'openfootball') {
+    return new OpenFootballProvider(env);
+  }
+
   return new MockWorldCupProvider();
 }
 
@@ -183,6 +187,32 @@ class ApiFootballProvider implements WorldCupProvider {
   }
 }
 
+class OpenFootballProvider implements WorldCupProvider {
+  constructor(private readonly env: AppEnv) {}
+
+  async getSnapshot(): Promise<WorldCupSnapshot> {
+    const [groupStageText, finalsText] = await Promise.all([this.getText('cup.txt'), this.getText('cup_finals.txt')]);
+    const matches = [...parseOpenFootballMatches(groupStageText), ...parseOpenFootballMatches(finalsText)];
+
+    return worldCupSnapshotSchema.parse({
+      source: 'openfootball',
+      updatedAt: new Date().toISOString(),
+      standings: [],
+      matches
+    });
+  }
+
+  private async getText(fileName: string): Promise<string> {
+    const response = await fetch(new URL(fileName, `${this.env.OPENFOOTBALL_BASE_URL.replace(/\/$/, '')}/`));
+
+    if (!response.ok) {
+      throw new Error(`OpenFootball request failed for ${fileName} with ${response.status} ${response.statusText}.`);
+    }
+
+    return response.text();
+  }
+}
+
 function getApiFootballError(payload: unknown): string | null {
   const parsed = z
     .object({
@@ -213,4 +243,217 @@ function mapApiFootballStatus(status: string): Match['status'] {
   }
 
   return 'scheduled';
+}
+
+export function parseOpenFootballMatches(source: string): Match[] {
+  const matches: Match[] = [];
+  let currentDate: OpenFootballDate | null = null;
+  let currentRound = 'Group stage';
+
+  for (const rawLine of toOpenFootballLogicalLines(source)) {
+    const line = rawLine.trim();
+
+    if (!line || line.startsWith('#') || line.startsWith('=')) {
+      continue;
+    }
+
+    if (line.startsWith('\u25aa')) {
+      currentRound = line.replace(/^\S+\s*/, '').trim();
+      continue;
+    }
+
+    if (line.startsWith('▪')) {
+      currentRound = line.replace(/^▪\s*/, '').trim();
+      continue;
+    }
+
+    const date = parseOpenFootballDate(line);
+
+    if (date) {
+      currentDate = date;
+      continue;
+    }
+
+    const match = parseOpenFootballMatchLine(line, currentDate, currentRound);
+
+    if (match) {
+      matches.push(match);
+    }
+  }
+
+  return matches;
+}
+
+function toOpenFootballLogicalLines(source: string): string[] {
+  const logicalLines: string[] = [];
+  let pending = '';
+
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      continue;
+    }
+
+    if (pending && !pending.includes('@') && !isOpenFootballControlLine(pending) && !isOpenFootballControlLine(line)) {
+      pending = `${pending} ${line}`;
+      continue;
+    }
+
+    if (pending) {
+      logicalLines.push(pending);
+    }
+
+    pending = line;
+  }
+
+  if (pending) {
+    logicalLines.push(pending);
+  }
+
+  return logicalLines;
+}
+
+function isOpenFootballControlLine(line: string): boolean {
+  return line.startsWith('#') || line.startsWith('=') || line.startsWith('\u25aa') || line.startsWith('â') || parseOpenFootballDate(line) !== null;
+}
+
+interface OpenFootballDate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+const monthNumbers = new Map([
+  ['jan', 0],
+  ['january', 0],
+  ['feb', 1],
+  ['february', 1],
+  ['mar', 2],
+  ['march', 2],
+  ['apr', 3],
+  ['april', 3],
+  ['may', 4],
+  ['jun', 5],
+  ['june', 5],
+  ['jul', 6],
+  ['july', 6],
+  ['aug', 7],
+  ['august', 7],
+  ['sep', 8],
+  ['september', 8],
+  ['oct', 9],
+  ['october', 9],
+  ['nov', 10],
+  ['november', 10],
+  ['dec', 11],
+  ['december', 11]
+]);
+
+function parseOpenFootballDate(line: string): OpenFootballDate | null {
+  const match = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Za-z]+)\s+(\d{1,2})$/i.exec(line);
+
+  if (!match) {
+    return null;
+  }
+
+  const month = monthNumbers.get(match[1].toLocaleLowerCase('en-US'));
+
+  if (month === undefined) {
+    return null;
+  }
+
+  return {
+    year: 2026,
+    month,
+    day: Number(match[2])
+  };
+}
+
+function parseOpenFootballMatchLine(line: string, currentDate: OpenFootballDate | null, currentRound: string): Match | null {
+  if (!currentDate) {
+    return null;
+  }
+
+  const scheduledMatch =
+    /^(?:\((\d+)\)\s*)?(\d{1,2}:\d{2})\s+UTC([+-]\d{1,2})\s+(.+?)\s+v\s+(.+?)\s+@\s+(.+?)\s*$/.exec(line);
+
+  if (scheduledMatch) {
+    const [, matchNumber, time, offset, homeTeam, awayTeam, venue] = scheduledMatch;
+
+    return {
+      id: `openfootball-${matchNumber ?? slugify(`${currentRound}-${currentDate.month + 1}-${currentDate.day}-${time}-${homeTeam}-${awayTeam}`)}`,
+      utcDate: toUtcIso(currentDate, time, Number(offset)),
+      round: currentRound.startsWith('Group ') ? currentRound : `${currentRound} - ${venue.trim()}`,
+      status: 'scheduled',
+      homeTeam: homeTeam.trim(),
+      awayTeam: awayTeam.trim(),
+      homeGoals: null,
+      awayGoals: null,
+      winnerTeam: null
+    };
+  }
+
+  const resultMatch =
+    /^(?:\((\d+)\)\s*)?(?:(\d{1,2}:\d{2})(?:\s+UTC([+-]\d{1,2}))?\s+)?(.+?)\s+(\d+)-(\d+)(?:\s+a\.e\.t\.?)?(?:\s+\([^@]*?\))?(?:,\s+(\d+)-(\d+)\s+pen\.?)?\s+(.+?)\s+@\s+(.+?)(?:\s+\(.*)?$/.exec(line);
+
+  if (!resultMatch) {
+    return null;
+  }
+
+  const [, matchNumber, time = '00:00', offset = '0', homeTeam, homeGoals, awayGoals, homePenalties, awayPenalties, awayTeam, venue] =
+    resultMatch;
+  const homeGoalCount = Number(homeGoals);
+  const awayGoalCount = Number(awayGoals);
+  const homePenaltyCount = homePenalties ? Number(homePenalties) : null;
+  const awayPenaltyCount = awayPenalties ? Number(awayPenalties) : null;
+
+  return {
+    id: `openfootball-${matchNumber ?? slugify(`${currentRound}-${currentDate.month + 1}-${currentDate.day}-${time}-${homeTeam}-${awayTeam}`)}`,
+    utcDate: toUtcIso(currentDate, time, Number(offset)),
+    round: currentRound.startsWith('Group ') ? currentRound : `${currentRound} - ${venue.trim()}`,
+    status: 'finished',
+    homeTeam: homeTeam.trim(),
+    awayTeam: awayTeam.trim(),
+    homeGoals: homeGoalCount,
+    awayGoals: awayGoalCount,
+    winnerTeam: getOpenFootballWinner(homeTeam.trim(), awayTeam.trim(), homeGoalCount, awayGoalCount, homePenaltyCount, awayPenaltyCount)
+  };
+}
+
+function getOpenFootballWinner(
+  homeTeam: string,
+  awayTeam: string,
+  homeGoals: number,
+  awayGoals: number,
+  homePenalties: number | null,
+  awayPenalties: number | null
+): string | null {
+  if (homeGoals > awayGoals) {
+    return homeTeam;
+  }
+
+  if (awayGoals > homeGoals) {
+    return awayTeam;
+  }
+
+  if (homePenalties !== null && awayPenalties !== null) {
+    return homePenalties > awayPenalties ? homeTeam : awayTeam;
+  }
+
+  return null;
+}
+
+function toUtcIso(date: OpenFootballDate, time: string, utcOffsetHours: number): string {
+  const [hour, minute] = time.split(':').map(Number);
+  const utcHour = hour - utcOffsetHours;
+  return new Date(Date.UTC(date.year, date.month, date.day, utcHour, minute, 0, 0)).toISOString();
+}
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('en-US')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }

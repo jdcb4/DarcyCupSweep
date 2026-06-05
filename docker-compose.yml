@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: worldcup
+      POSTGRES_USER: worldcup
+      POSTGRES_PASSWORD: worldcup
+    ports:
+      - "55432:5432"
+    volumes:
+      - worldcup-postgres:/var/lib/postgresql/data
+
+volumes:
+  worldcup-postgres:

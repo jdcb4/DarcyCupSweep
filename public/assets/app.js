@@ -5,13 +5,17 @@ const formatter = new Intl.NumberFormat('en-US', {
 });
 
 async function refreshDashboard() {
+  const shell = document.querySelector('[data-api-path]');
+  const apiPath = shell?.dataset.apiPath ?? '/api/sweep';
   const providerLabel = document.querySelector('#provider-label');
   const status = document.querySelector('#provider-status');
   const lastUpdated = document.querySelector('#last-updated');
+  const contenderList = document.querySelector('#contender-list');
   const matchList = document.querySelector('#match-countdowns-list');
+  const recentResultsList = document.querySelector('#recent-results-list');
 
   try {
-    const response = await fetch('/api/sweep');
+    const response = await fetch(apiPath);
 
     if (!response.ok) {
       throw new Error(`Request failed with ${response.status}`);
@@ -21,11 +25,12 @@ async function refreshDashboard() {
 
     providerLabel.textContent = payload.snapshot.source;
     lastUpdated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString()}`;
-    status.textContent =
-      payload.snapshot.source === 'mock'
-        ? 'Mock provider active. Add API_FOOTBALL_KEY and set RESULTS_PROVIDER=api-football for live data.'
-        : 'Live provider active.';
-    renderMatches(matchList, payload.snapshot.matches);
+    status.textContent = providerStatusText(payload.snapshot.source);
+    renderMatches(matchList, payload.tracking.upcomingMatches);
+    renderRecentResults(recentResultsList, payload.tracking.recentResults);
+    renderContenders(contenderList, payload.tracking.participants);
+    renderParticipantTracking(payload.tracking.participants);
+    renderNationStatuses(payload.tracking.nations);
 
     if (payload.sweep.status === 'active') {
       for (const standing of payload.leaderboard) {
@@ -40,7 +45,9 @@ async function refreshDashboard() {
     providerLabel.textContent = 'Unavailable';
     lastUpdated.textContent = 'Snapshot failed';
     status.textContent = error instanceof Error ? error.message : 'Unable to load latest World Cup data.';
+    renderContenders(contenderList, []);
     renderMatches(matchList, []);
+    renderRecentResults(recentResultsList, []);
   }
 }
 
@@ -49,14 +56,14 @@ function renderMatches(container, matches) {
     return;
   }
 
-  const upcoming = matches
+  const visibleMatches = matches
     .filter((match) => match.status !== 'finished')
     .sort((left, right) => new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime())
-    .slice(0, 6);
+    .slice(0, 4);
 
   container.replaceChildren();
 
-  if (upcoming.length === 0) {
+  if (visibleMatches.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-copy';
     empty.textContent = 'No upcoming fixtures identified yet.';
@@ -64,26 +71,263 @@ function renderMatches(container, matches) {
     return;
   }
 
-  for (const match of upcoming) {
-    const item = document.createElement('article');
-    item.className = 'match-item';
-
-    const teams = document.createElement('strong');
-    teams.textContent = `${match.homeTeam} vs ${match.awayTeam}`;
-
-    const meta = document.createElement('span');
-    meta.textContent = `${match.round} · ${new Date(match.utcDate).toLocaleString()}`;
-
-    const countdown = document.createElement('time');
-    countdown.dateTime = match.utcDate;
-    countdown.dataset.countdownTarget = match.utcDate;
-    countdown.textContent = 'Calculating';
-
-    item.append(teams, meta, countdown);
-    container.append(item);
+  for (const match of visibleMatches) {
+    container.append(renderMatchCard(match, 'upcoming'));
   }
 
   updateCountdowns();
+}
+
+function renderRecentResults(container, matches) {
+  if (!container) {
+    return;
+  }
+
+  const visibleMatches = matches
+    .filter((match) => match.status === 'finished')
+    .sort((left, right) => new Date(right.utcDate).getTime() - new Date(left.utcDate).getTime())
+    .slice(0, 4);
+
+  container.replaceChildren();
+
+  if (visibleMatches.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-copy';
+    empty.textContent = 'No finished matches identified yet.';
+    container.append(empty);
+    return;
+  }
+
+  for (const match of visibleMatches) {
+    container.append(renderMatchCard(match, 'result'));
+  }
+}
+
+function renderMatchCard(match, variant) {
+  const item = document.createElement('article');
+  item.className = `match-item ${variant === 'result' ? 'is-result' : 'is-upcoming'}`;
+
+  const header = document.createElement('div');
+  header.className = 'match-card-header';
+
+  const round = document.createElement('span');
+  round.className = 'match-round';
+  round.textContent = match.round;
+
+  const time = document.createElement('time');
+  time.dateTime = match.utcDate;
+  time.textContent = new Date(match.utcDate).toLocaleString();
+
+  header.append(round, time);
+
+  const body = document.createElement('div');
+  body.className = 'match-card-body';
+
+  const teams = document.createElement('div');
+  teams.className = 'match-teams';
+  teams.append(renderTeamRow(match.homeFlag, match.homeTeam, match.homeParticipantName), renderTeamRow(match.awayFlag, match.awayTeam, match.awayParticipantName));
+
+  const marker = document.createElement('div');
+  marker.className = 'match-marker';
+
+  if (variant === 'result') {
+    const score = document.createElement('strong');
+    score.className = 'scoreline';
+    score.textContent = `${match.homeGoals ?? '-'} - ${match.awayGoals ?? '-'}`;
+
+    const winner = document.createElement('span');
+    winner.textContent = match.winnerTeam ? `Winner: ${match.winnerTeam}${winnerOwnerSuffix(match)}` : 'Draw';
+
+    marker.append(score, winner);
+  } else {
+    const label = document.createElement('span');
+    label.textContent = 'Kickoff';
+
+    const countdown = document.createElement('strong');
+    countdown.dataset.countdownTarget = match.utcDate;
+    countdown.textContent = 'Calculating';
+
+    marker.append(label, countdown);
+  }
+
+  body.append(teams, marker);
+
+  const owners = document.createElement('span');
+  owners.className = 'match-owners';
+  owners.textContent = ownershipSummary(match);
+
+  item.append(header, body, owners);
+  return item;
+}
+
+function renderTeamRow(flag, team, participantName) {
+  const row = document.createElement('div');
+  row.className = 'match-team-row';
+
+  const label = document.createElement('span');
+  label.className = 'match-team-name';
+  label.textContent = `${flag} ${team}`;
+
+  const owner = document.createElement('span');
+  owner.className = participantName ? 'owner-pill' : 'owner-pill empty-owner';
+  owner.textContent = participantName ?? 'Unowned';
+
+  row.append(label, owner);
+  return row;
+}
+
+function renderContenders(container, participants) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (participants.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-copy';
+    empty.textContent = 'No participant status available yet.';
+    container.append(empty);
+    return;
+  }
+
+  const ranked = [...participants].sort(
+    (left, right) => right.teamsLeft - left.teamsLeft || nextMatchTime(left.nextMatch) - nextMatchTime(right.nextMatch) || left.participantName.localeCompare(right.participantName)
+  );
+
+  for (const participant of ranked) {
+    const card = document.createElement('article');
+    card.className = 'contender-card';
+
+    const header = document.createElement('div');
+    header.className = 'contender-header';
+
+    const name = document.createElement('strong');
+    name.textContent = participant.participantName;
+
+    const left = document.createElement('span');
+    left.className = participant.teamsLeft > 0 ? 'left-pill active' : 'left-pill eliminated';
+    left.textContent = `${participant.teamsLeft} left`;
+
+    header.append(name, left);
+
+    const teams = document.createElement('div');
+    teams.className = 'contender-teams';
+
+    for (const team of participant.teams) {
+      const chip = document.createElement('span');
+      chip.className = team.status === 'active' ? 'mini-team active' : 'mini-team eliminated';
+      chip.textContent = `${team.nation.flag} ${team.nation.name}`;
+      teams.append(chip);
+    }
+
+    const run = document.createElement('span');
+    run.className = 'contender-run';
+    run.textContent = participant.runSummary;
+
+    card.append(header, teams, run);
+    container.append(card);
+  }
+}
+
+function renderParticipantTracking(participants) {
+  for (const participant of participants) {
+    const teamsLeftCell = document.querySelector(`[data-teams-left-for="${cssEscape(participant.participantName)}"]`);
+    const nextMatchCell = document.querySelector(`[data-next-match-for="${cssEscape(participant.participantName)}"]`);
+    const runCell = document.querySelector(`[data-run-for="${cssEscape(participant.participantName)}"]`);
+
+    if (teamsLeftCell) {
+      teamsLeftCell.textContent = String(participant.teamsLeft);
+    }
+
+    if (nextMatchCell) {
+      nextMatchCell.replaceChildren(renderNextMatch(participant.nextMatch));
+    }
+
+    if (runCell) {
+      runCell.textContent = participant.runSummary;
+    }
+  }
+}
+
+function renderNextMatch(match) {
+  const element = document.createElement('span');
+  element.className = 'next-match';
+
+  if (!match) {
+    element.textContent = 'No upcoming match';
+    return element;
+  }
+
+  element.textContent = `${match.homeFlag} ${match.homeTeam} vs ${match.awayFlag} ${match.awayTeam}`;
+  return element;
+}
+
+function nextMatchTime(match) {
+  return match ? new Date(match.utcDate).getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function ownershipSummary(match) {
+  if (match.homeParticipantName && match.awayParticipantName) {
+    if (match.homeParticipantName === match.awayParticipantName) {
+      return `Sweep participant: ${match.homeParticipantName} owns both teams`;
+    }
+
+    return `Sweep matchup: ${match.homeParticipantName} vs ${match.awayParticipantName}`;
+  }
+
+  if (match.homeParticipantName) {
+    return `Sweep participant: ${match.homeParticipantName}`;
+  }
+
+  if (match.awayParticipantName) {
+    return `Sweep participant: ${match.awayParticipantName}`;
+  }
+
+  return 'No sweep participants assigned';
+}
+
+function winnerOwnerSuffix(match) {
+  if (match.winnerTeam === match.homeTeam && match.homeParticipantName) {
+    return ` (${match.homeParticipantName})`;
+  }
+
+  if (match.winnerTeam === match.awayTeam && match.awayParticipantName) {
+    return ` (${match.awayParticipantName})`;
+  }
+
+  return '';
+}
+
+function renderNationStatuses(nations) {
+  for (const team of nations) {
+    const chip = document.querySelector(`[data-nation-status="${cssEscape(team.nation.name)}"]`);
+
+    if (!chip) {
+      continue;
+    }
+
+    chip.classList.toggle('eliminated', team.status === 'eliminated');
+    chip.classList.toggle('active', team.status === 'active');
+    chip.textContent = `${team.nation.flag} ${team.nation.name}`;
+    chip.title = team.status === 'eliminated' ? 'Eliminated' : 'Still in the cup';
+  }
+}
+
+function providerStatusText(source) {
+  if (source === 'mock') {
+    return 'Mock provider active. Set RESULTS_PROVIDER=openfootball for public schedule data or api-football for paid live data.';
+  }
+
+  if (source === 'openfootball') {
+    return 'OpenFootball provider active. Fixtures and post-game results update when the upstream public-domain files are updated.';
+  }
+
+  if (source.startsWith('demo')) {
+    return 'Demo snapshot active. These fixtures and results are fixed sample data for previewing the sweep UI.';
+  }
+
+  return 'Live provider active.';
 }
 
 function updateCountdowns() {

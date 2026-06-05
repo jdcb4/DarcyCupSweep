@@ -2,6 +2,40 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.5.0 - 2026-06-05
+
+- Added `/matches`, a navigable page showing all upcoming World Cup matches.
+- Grouped match fixtures by Australian Eastern date and displayed kickoff times using the `Australia/Sydney` timezone.
+- Exposed all upcoming provider-backed matches through the tracking API while keeping the dashboard limited to the next four.
+
+## 0.4.2 - 2026-06-05
+
+- Redesigned upcoming and recent match cards with structured team rows, owner pills, score/countdown markers, and matchup summaries.
+- Added participant contender cards and run summaries so users can scan who still has teams alive and how far each participant has reached.
+- Added a Run column to the participant table and improved mobile behavior for the contender strip.
+
+## 0.4.1 - 2026-06-05
+
+- Added local demo pages for allocated teams with no results and allocated teams with the first dozen completed results.
+- Added fixed demo API snapshots so preview states do not overwrite live admin/Postgres sweep data.
+
+## 0.4.0 - 2026-06-05
+
+- Added Postgres persistence behind `DATABASE_URL`, with JSON fallback for local development.
+- Added a local Docker Compose Postgres service and database migration script.
+- Updated Railway to run database migration before app start.
+- Rebuilt `/admin` around drag/drop assignment from all 48 participating nations.
+- Added flags for all participating nations.
+- Added participant tracking for teams left and next match.
+- Added next four upcoming matches, recent winners, per-team sweep participant ownership, and active/eliminated nation status.
+
+## 0.3.0 - 2026-06-05
+
+- Added `RESULTS_PROVIDER=openfootball` for public-domain OpenFootball World Cup schedule fixtures.
+- Added OpenFootball post-game score and winner parsing.
+- Kept API-FOOTBALL as the paid near-real-time provider option.
+- Added generated participant animal avatars through a local sprite sheet.
+
 ## 0.2.2 - 2026-06-05
 
 - Surface API-FOOTBALL response errors instead of treating error payloads as empty fixture data.

@@ -12,31 +12,44 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 - Git repository: initialized.
 - Package manager: pnpm.
 - Runtime/deployment target: Railway via GitHub.
-- Persistence: local JSON data in `src/data/sweep.json`.
+- Persistence: Postgres when `DATABASE_URL` is set; local JSON fallback in `src/data/sweep.json`.
 
 ## Important folders
 
 - `src/app` - Hono routes, server entrypoint, and HTML rendering.
 - `src/config` - typed environment parsing.
-- `src/data` - local JSON sweep data.
-- `src/domain` - framework-independent sweep rules and prize calculations.
-- `src/services` - IO wrappers for local data and World Cup providers.
+- `src/data` - local JSON sweep data, static nation metadata, and fixed demo snapshots.
+- `src/domain` - framework-independent sweep rules, prize calculations, and tracking derivation.
+- `src/services` - IO wrappers for sweep persistence and World Cup providers.
 - `src/tests` - Vitest tests.
 - `public/assets` - static CSS, browser JavaScript, and local visual assets.
 - `docs` - durable project documentation.
-- `scripts` - deterministic project utility scripts, currently reserved.
+- `scripts` - deterministic project utility scripts, including database migration.
+- `docker-compose.yml` - local Postgres service on host port `55432`.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
 | `pnpm run dev` | Start the development server. |
+| `pnpm run db:migrate` | Create and seed the Postgres app state table when `DATABASE_URL` is set. |
 | `pnpm run typecheck` | TypeScript checking. |
 | `pnpm run lint` | ESLint. |
 | `pnpm test` | Vitest once. |
 | `pnpm run test:watch` | Vitest in watch mode. |
 | `pnpm run build` | Production build. |
+| `pnpm run start:railway` | Run database migration, then start the production server. |
 | `pnpm run verify` | Typecheck + lint + test + build. |
+
+## Demo routes
+
+- `/demo/allocated` - allocated teams, no results.
+- `/demo/results` - allocated teams, first dozen games completed.
+
+## User routes
+
+- `/` - sweep dashboard.
+- `/matches` - all upcoming matches with Australian Eastern kickoff times.
 
 ## Key docs
 
@@ -52,4 +65,3 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 - [`CHANGELOG.md`](CHANGELOG.md) - notable changes by version.
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) - deploy instructions.
 - [`../SECURITY.md`](../SECURITY.md) - security rules.
-
