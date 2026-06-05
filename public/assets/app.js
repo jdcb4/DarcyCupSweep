@@ -31,7 +31,9 @@ async function refreshDashboard() {
 
     if (payload.sweep.status === 'active') {
       for (const standing of payload.leaderboard) {
-        const prizeCell = document.querySelector(`[data-prize-for="${cssEscape(standing.participantName)}"]`);
+        const prizeCell = document.querySelector(
+          `[data-prize-for="${cssEscape(standing.participantName)}"]`
+        );
 
         if (prizeCell) {
           prizeCell.textContent = formatter.format(standing.prizeUsd);
@@ -52,27 +54,49 @@ function renderSpotlights(payload) {
   const nextMatch = payload.tracking.upcomingMatches[0];
   const latestResult = payload.tracking.recentResults[0];
 
-  setSpotlight('spotlight-leader', leader ? leader.participantName : 'Preview: Darcy');
+  setSpotlight(
+    'spotlight-leader',
+    leader ? leader.participantName : 'Draw pending'
+  );
   setSpotlight(
     'spotlight-leader-detail',
-    leader ? `${formatter.format(leader.prizeUsd)} won so far` : `Prize leaders will appear here - ${formatter.format(payload.sweep.buyInUsd * payload.sweep.participants.length)} pool`
+    leader
+      ? `${formatter.format(leader.prizeUsd)} won so far`
+      : `${formatter.format(payload.sweep.buyInUsd * payload.sweep.participants.length)} pool waiting for results`
   );
 
-  setSpotlight('spotlight-next-match', nextMatch ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam}` : 'Preview: Team A vs Team B');
+  setSpotlight(
+    'spotlight-next-match',
+    nextMatch
+      ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam}`
+      : 'Fixture preview'
+  );
   setSpotlight(
     'spotlight-next-detail',
-    nextMatch ? `${ownershipSummary(nextMatch)} - ${new Date(nextMatch.utcDate).toLocaleString()}` : 'Upcoming sweep matchups will appear here'
+    nextMatch
+      ? `${ownershipSummary(nextMatch)} - ${new Date(nextMatch.utcDate).toLocaleString()}`
+      : 'Sweep matchups appear here once fixtures are loaded'
   );
 
   setSpotlight(
     'spotlight-last-result',
-    latestResult ? `${latestResult.homeTeam} ${latestResult.homeGoals ?? '-'} - ${latestResult.awayGoals ?? '-'} ${latestResult.awayTeam}` : 'Preview: Team A 2 - 1 Team B'
+    latestResult
+      ? `${latestResult.homeTeam} ${latestResult.homeGoals ?? '-'} - ${latestResult.awayGoals ?? '-'} ${latestResult.awayTeam}`
+      : 'Results pending'
   );
-  setSpotlight('spotlight-last-detail', latestResult ? ownershipSummary(latestResult) : 'Recent winners will appear here after matches finish');
+  setSpotlight(
+    'spotlight-last-detail',
+    latestResult
+      ? ownershipSummary(latestResult)
+      : 'Recent winners appear here after matches finish'
+  );
 }
 
 function renderSpotlightError(error) {
-  const message = error instanceof Error ? error.message : 'Unable to load latest World Cup data.';
+  const message =
+    error instanceof Error
+      ? error.message
+      : 'Unable to load latest World Cup data.';
   setSpotlight('spotlight-leader', 'Unavailable');
   setSpotlight('spotlight-leader-detail', message);
   setSpotlight('spotlight-next-match', 'Unavailable');
@@ -96,7 +120,10 @@ function renderMatches(container, matches) {
 
   const visibleMatches = matches
     .filter((match) => match.status !== 'finished')
-    .sort((left, right) => new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime())
+    .sort(
+      (left, right) =>
+        new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
+    )
     .slice(0, 4);
 
   container.replaceChildren();
@@ -120,7 +147,10 @@ function renderRecentResults(container, matches) {
 
   const visibleMatches = matches
     .filter((match) => match.status === 'finished')
-    .sort((left, right) => new Date(right.utcDate).getTime() - new Date(left.utcDate).getTime())
+    .sort(
+      (left, right) =>
+        new Date(right.utcDate).getTime() - new Date(left.utcDate).getTime()
+    )
     .slice(0, 4);
 
   container.replaceChildren();
@@ -142,13 +172,13 @@ function renderPreviewMatchCard(variant) {
       utcDate: new Date(Date.now() + 86400000).toISOString(),
       round: 'Preview',
       status: variant === 'result' ? 'finished' : 'scheduled',
-      homeTeam: 'Team A',
-      awayTeam: 'Team B',
+      homeTeam: variant === 'result' ? 'Mexico' : 'Mexico',
+      awayTeam: variant === 'result' ? 'South Africa' : 'South Africa',
       homeFlagImageUrl: 'https://flagcdn.com/w80/mx.png',
       awayFlagImageUrl: 'https://flagcdn.com/w80/za.png',
       homeGoals: variant === 'result' ? 2 : null,
       awayGoals: variant === 'result' ? 1 : null,
-      winnerTeam: variant === 'result' ? 'Team A' : null,
+      winnerTeam: variant === 'result' ? 'Mexico' : null,
       homeParticipantName: 'Darcy',
       awayParticipantName: 'Joe',
       participantNames: ['Darcy', 'Joe'],
@@ -181,8 +211,16 @@ function renderMatchCard(match, variant) {
   const teams = document.createElement('div');
   teams.className = 'match-teams';
   teams.append(
-    renderTeamRow(match.homeFlagImageUrl, match.homeTeam, match.homeParticipantName),
-    renderTeamRow(match.awayFlagImageUrl, match.awayTeam, match.awayParticipantName)
+    renderTeamRow(
+      match.homeFlagImageUrl,
+      match.homeTeam,
+      match.homeParticipantName
+    ),
+    renderTeamRow(
+      match.awayFlagImageUrl,
+      match.awayTeam,
+      match.awayParticipantName
+    )
   );
 
   const marker = document.createElement('div');
@@ -194,7 +232,9 @@ function renderMatchCard(match, variant) {
     score.textContent = `${match.homeGoals ?? '-'} - ${match.awayGoals ?? '-'}`;
 
     const winner = document.createElement('span');
-    winner.textContent = match.winnerTeam ? `Winner: ${match.winnerTeam}${winnerOwnerSuffix(match)}` : 'Draw';
+    winner.textContent = match.winnerTeam
+      ? `Winner: ${match.winnerTeam}${winnerOwnerSuffix(match)}`
+      : 'Draw';
 
     marker.append(score, winner);
   } else {
@@ -212,7 +252,9 @@ function renderMatchCard(match, variant) {
 
   const owners = document.createElement('span');
   owners.className = 'match-owners';
-  owners.textContent = match.isPreview ? `Preview: ${ownershipSummary(match)}` : ownershipSummary(match);
+  owners.textContent = match.isPreview
+    ? `Example: ${ownershipSummary(match)}`
+    : ownershipSummary(match);
 
   item.append(header, body, owners);
   return item;
@@ -224,7 +266,10 @@ function renderTeamRow(flagImageUrl, team, participantName) {
 
   const label = document.createElement('span');
   label.className = 'match-team-name';
-  label.append(renderFlagImage(flagImageUrl, team), document.createTextNode(team));
+  label.append(
+    renderFlagImage(flagImageUrl, team),
+    document.createTextNode(team)
+  );
 
   const owner = document.createElement('span');
   owner.className = participantName ? 'owner-pill' : 'owner-pill empty-owner';
@@ -249,8 +294,20 @@ function renderContenders(container, participants) {
     return;
   }
 
+  const hasAllocatedTeams = participants.some(
+    (participant) => participant.teams.length > 0
+  );
+
+  if (!hasAllocatedTeams) {
+    renderPreSweepRoster(container, participants);
+    return;
+  }
+
   const ranked = [...participants].sort(
-    (left, right) => right.teamsLeft - left.teamsLeft || nextMatchTime(left.nextMatch) - nextMatchTime(right.nextMatch) || left.participantName.localeCompare(right.participantName)
+    (left, right) =>
+      right.teamsLeft - left.teamsLeft ||
+      nextMatchTime(left.nextMatch) - nextMatchTime(right.nextMatch) ||
+      left.participantName.localeCompare(right.participantName)
   );
 
   for (const participant of ranked) {
@@ -264,7 +321,8 @@ function renderContenders(container, participants) {
     name.textContent = participant.participantName;
 
     const left = document.createElement('span');
-    left.className = participant.teamsLeft > 0 ? 'left-pill active' : 'left-pill eliminated';
+    left.className =
+      participant.teamsLeft > 0 ? 'left-pill active' : 'left-pill eliminated';
     left.textContent = `${participant.teamsLeft} left`;
 
     header.append(name, left);
@@ -272,22 +330,14 @@ function renderContenders(container, participants) {
     const teams = document.createElement('div');
     teams.className = 'contender-teams';
 
-    const visibleTeams = participant.teams.length > 0
-      ? participant.teams
-      : [
-          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/mx.png' } },
-          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/za.png' } },
-          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/br.png' } }
-        ];
+    const visibleTeams = participant.teams;
 
     for (const team of visibleTeams) {
       const chip = document.createElement('span');
       chip.className =
-        participant.teams.length === 0
-          ? 'mini-team country-card is-preview'
-          : team.status === 'active'
-            ? 'mini-team country-card active'
-            : 'mini-team country-card eliminated';
+        team.status === 'active'
+          ? 'mini-team country-card active'
+          : 'mini-team country-card eliminated';
       chip.append(renderFlagImage(team.nation.flagImageUrl, team.nation.name));
       const text = document.createElement('span');
       const name = document.createElement('strong');
@@ -301,18 +351,98 @@ function renderContenders(container, participants) {
 
     const run = document.createElement('span');
     run.className = 'contender-run';
-    run.textContent = participant.teams.length === 0 ? 'Preview: teams appear here after the draw' : participant.runSummary;
+    run.textContent = participant.runSummary;
 
     card.append(header, teams, run);
     container.append(card);
   }
 }
 
+function renderPreSweepRoster(container, participants) {
+  const preview = document.createElement('article');
+  preview.className = 'pre-sweep-preview';
+
+  const previewCopy = document.createElement('div');
+  const previewLabel = document.createElement('p');
+  previewLabel.className = 'eyebrow';
+  previewLabel.textContent = 'After the draw';
+  const previewTitle = document.createElement('strong');
+  previewTitle.textContent = 'Each participant will show three flag cards here';
+  const previewDetail = document.createElement('span');
+  previewDetail.textContent =
+    'Cards will fade when a nation is knocked out, and next-match/prize tracking will update automatically.';
+  previewCopy.append(previewLabel, previewTitle, previewDetail);
+
+  const teams = document.createElement('div');
+  teams.className = 'sample-team-strip';
+  for (const team of [
+    {
+      name: 'Mexico',
+      code: 'MEX',
+      flagImageUrl: 'https://flagcdn.com/w80/mx.png'
+    },
+    {
+      name: 'South Africa',
+      code: 'RSA',
+      flagImageUrl: 'https://flagcdn.com/w80/za.png'
+    },
+    {
+      name: 'Brazil',
+      code: 'BRA',
+      flagImageUrl: 'https://flagcdn.com/w80/br.png'
+    }
+  ]) {
+    const chip = document.createElement('span');
+    chip.className = 'mini-team country-card is-preview';
+    chip.append(renderFlagImage(team.flagImageUrl, team.name));
+    const text = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = team.name;
+    const code = document.createElement('small');
+    code.textContent = team.code;
+    text.append(name, code);
+    chip.append(text);
+    teams.append(chip);
+  }
+  preview.append(previewCopy, teams);
+  container.append(preview);
+
+  const roster = document.createElement('div');
+  roster.className = 'pre-sweep-roster';
+
+  for (const [index, participant] of participants.entries()) {
+    const card = document.createElement('article');
+    card.className = 'roster-card';
+
+    const avatar = document.createElement('span');
+    avatar.className = `participant-avatar avatar-${index}`;
+    avatar.setAttribute('aria-hidden', 'true');
+
+    const copy = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = participant.participantName;
+    const state = document.createElement('small');
+    state.textContent = 'Awaiting draw';
+    copy.append(name, state);
+
+    card.append(avatar, copy);
+    roster.append(card);
+  }
+
+  container.append(roster);
+}
+
 function renderParticipantTracking(participants) {
   for (const participant of participants) {
-    const teamsLeftCell = document.querySelector(`[data-teams-left-for="${cssEscape(participant.participantName)}"]`);
-    const nextMatchCell = document.querySelector(`[data-next-match-for="${cssEscape(participant.participantName)}"]`);
-    const runCell = document.querySelector(`[data-run-for="${cssEscape(participant.participantName)}"]`);
+    const teamsLeftCell = document.querySelector(
+      `[data-teams-left-for="${cssEscape(participant.participantName)}"]`
+    );
+    const nextMatchCell = document.querySelector(
+      `[data-next-match-for="${cssEscape(participant.participantName)}"]`
+    );
+    const runCell = document.querySelector(
+      `[data-run-for="${cssEscape(participant.participantName)}"]`
+    );
 
     if (teamsLeftCell) {
       teamsLeftCell.textContent = String(participant.teamsLeft);
@@ -378,8 +508,13 @@ function winnerOwnerSuffix(match) {
 }
 
 function renderNationStatuses(nations) {
+  let activeCount = 0;
+  let eliminatedCount = 0;
+
   for (const team of nations) {
-    const chip = document.querySelector(`[data-nation-status="${cssEscape(team.nation.name)}"]`);
+    const chip = document.querySelector(
+      `[data-nation-status="${cssEscape(team.nation.name)}"]`
+    );
 
     if (!chip) {
       continue;
@@ -387,7 +522,23 @@ function renderNationStatuses(nations) {
 
     chip.classList.toggle('eliminated', team.status === 'eliminated');
     chip.classList.toggle('active', team.status === 'active');
-    chip.title = team.status === 'eliminated' ? 'Eliminated' : 'Still in the cup';
+    chip.title =
+      team.status === 'eliminated' ? 'Eliminated' : 'Still in the cup';
+
+    if (team.status === 'eliminated') {
+      eliminatedCount += 1;
+    } else {
+      activeCount += 1;
+    }
+  }
+
+  const summary = document.querySelector('#nation-status-summary');
+
+  if (summary) {
+    summary.textContent =
+      eliminatedCount > 0
+        ? `${activeCount} active, ${eliminatedCount} out`
+        : `${activeCount} nations active`;
   }
 }
 

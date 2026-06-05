@@ -2,6 +2,14 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.1 - 2026-06-05
+
+- Reworked the pre-sweep dashboard to show a compact participant roster and a single example allocation preview instead of repeated placeholder team cards.
+- Improved first-load placeholders so the server-rendered page shows useful pending states before the API snapshot loads.
+- Collapsed the full cup status list by default and added an active/eliminated nation summary.
+- Moved the detailed participant table behind a disclosure control to keep the primary dashboard focused on highlights, matches, and roster status.
+- Tightened match card, country card, header, and mobile styling for a cleaner dark UI.
+
 ## 0.8.0 - 2026-06-05
 
 - Split next matches, latest results, and cup status into separate collapsible panels.

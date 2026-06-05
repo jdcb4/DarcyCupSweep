@@ -9,12 +9,15 @@ export interface DashboardRenderOptions {
   demoLinks?: boolean;
 }
 
-export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = {}): string {
+export function renderDashboard(
+  sweep: Sweep,
+  options: DashboardRenderOptions = {}
+): string {
   const isActive = sweep.status === 'active';
   const phaseLabel = isActive ? 'Sweep active' : 'Pre-sweep';
   const phaseCopy = isActive
-    ? 'Teams are allocated and prize tracking is live.'
-    : 'Participants are listed before the draw. Team allocations will appear here once the sweep is confirmed active.';
+    ? 'Teams allocated. Prize tracking is live.'
+    : 'Draw pending. Teams appear after allocation.';
   const participantRows = sweep.participants
     .map(
       (participant, index) => `
@@ -56,7 +59,7 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
         <div class="header-copy">
           <p class="eyebrow">2026 Football World Cup Sweep</p>
           <h1 id="page-title">Darcy Cup</h1>
-          <p class="summary">The sweep table, live fixtures, and latest results in one place.</p>
+          <p class="summary">Fixtures, results, and sweep standings.</p>
           <div class="phase-pill" data-sweep-status="${sweep.status}">
             <strong>${phaseLabel}</strong>
             <span>${phaseCopy}</span>
@@ -67,18 +70,18 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
       <section class="spotlight-grid" aria-label="Sweep highlights">
         <article class="spotlight-card">
           <span>Prize leader</span>
-          <strong id="spotlight-leader">Loading</strong>
-          <small id="spotlight-leader-detail">$${prizePoolUsd(sweep)} pool</small>
+          <strong id="spotlight-leader">Draw pending</strong>
+          <small id="spotlight-leader-detail">$${prizePoolUsd(sweep)} pool waiting for results</small>
         </article>
         <article class="spotlight-card">
           <span>Next match</span>
-          <strong id="spotlight-next-match">Loading</strong>
-          <small id="spotlight-next-detail">Awaiting fixtures</small>
+          <strong id="spotlight-next-match">Fixture preview</strong>
+          <small id="spotlight-next-detail">Sweep matchups appear here once fixtures are loaded</small>
         </article>
         <article class="spotlight-card">
           <span>Latest result</span>
-          <strong id="spotlight-last-result">Loading</strong>
-          <small id="spotlight-last-detail">Awaiting results</small>
+          <strong id="spotlight-last-result">Results pending</strong>
+          <small id="spotlight-last-detail">Recent winners appear here after matches finish</small>
         </article>
       </section>
 
@@ -89,27 +92,30 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
               <p class="eyebrow">${isActive ? 'Leaderboard' : 'Pre-allocation'}</p>
               <h2>Participants</h2>
             </div>
-            <p id="last-updated">Awaiting results snapshot</p>
+            <p id="last-updated">Awaiting snapshot</p>
           </summary>
           <div class="collapsible-body">
             <div id="contender-list" class="contender-list" aria-label="Participant contender status">
-              <p class="empty-copy">Loading participant status.</p>
+              <p class="empty-copy">Preparing participant roster.</p>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Participant</th>
-                    <th scope="col">Left</th>
-                    <th scope="col">Allocation</th>
-                    <th scope="col">Next match</th>
-                    <th scope="col">Run</th>
-                    <th scope="col">Prizes</th>
-                  </tr>
-                </thead>
-                <tbody>${participantRows}</tbody>
-              </table>
-            </div>
+            <details class="detail-table-panel">
+              <summary>Detailed tracking table</summary>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Participant</th>
+                      <th scope="col">Left</th>
+                      <th scope="col">Allocation</th>
+                      <th scope="col">Next match</th>
+                      <th scope="col">Run</th>
+                      <th scope="col">Prizes</th>
+                    </tr>
+                  </thead>
+                  <tbody>${participantRows}</tbody>
+                </table>
+              </div>
+            </details>
           </div>
         </details>
 
@@ -123,7 +129,7 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
             </summary>
             <div class="collapsible-body">
               <div id="match-countdowns-list" class="match-list">
-                <p class="empty-copy">Loading match countdowns.</p>
+                <p class="empty-copy">Loading fixture preview.</p>
               </div>
             </div>
           </details>
@@ -136,16 +142,17 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
             </summary>
             <div class="collapsible-body">
               <div id="recent-results-list" class="match-list">
-                <p class="empty-copy">Loading recent results.</p>
+                <p class="empty-copy">Results will appear after completed matches.</p>
               </div>
             </div>
           </details>
-          <details class="panel collapsible-panel nation-statuses-panel" open>
+          <details class="panel collapsible-panel nation-statuses-panel">
             <summary>
               <div>
                 <p class="eyebrow">Nations</p>
                 <h2>Cup status</h2>
               </div>
+              <p id="nation-status-summary" class="panel-summary-note">48 nations</p>
             </summary>
             <div class="collapsible-body">
               <div id="nation-status-list" class="nation-status-list">
@@ -199,10 +206,20 @@ export interface AdminRenderOptions {
   errors?: string[];
 }
 
-export function renderAdminPage(sweep: Sweep, nations: Nation[], options: AdminRenderOptions = {}): string {
-  const assignedTeams = new Set(sweep.participants.flatMap((participant) => participant.teams));
-  const availableNations = nations.filter((nation) => !assignedTeams.has(nation.name));
-  const availableChips = availableNations.map((nation) => renderNationChip(nation)).join('');
+export function renderAdminPage(
+  sweep: Sweep,
+  nations: Nation[],
+  options: AdminRenderOptions = {}
+): string {
+  const assignedTeams = new Set(
+    sweep.participants.flatMap((participant) => participant.teams)
+  );
+  const availableNations = nations.filter(
+    (nation) => !assignedTeams.has(nation.name)
+  );
+  const availableChips = availableNations
+    .map((nation) => renderNationChip(nation))
+    .join('');
   const rows = sweep.participants
     .map(
       (participant, index) => `
@@ -214,8 +231,12 @@ export function renderAdminPage(sweep: Sweep, nations: Nation[], options: AdminR
           <div class="team-dropzone" data-team-dropzone="${index}" aria-label="${escapeHtml(participant.name)} teams">
             ${participant.teams
               .map((team) => {
-                const nation = nations.find((candidate) => candidate.name === team);
-                return nation ? renderNationChip(nation) : `<span class="nation-chip unknown" draggable="true" data-team="${escapeHtml(team)}">${escapeHtml(team)}</span>`;
+                const nation = nations.find(
+                  (candidate) => candidate.name === team
+                );
+                return nation
+                  ? renderNationChip(nation)
+                  : `<span class="nation-chip unknown" draggable="true" data-team="${escapeHtml(team)}">${escapeHtml(team)}</span>`;
               })
               .join('')}
           </div>
@@ -227,7 +248,9 @@ export function renderAdminPage(sweep: Sweep, nations: Nation[], options: AdminR
   const errors = options.errors?.length
     ? `<div class="admin-alert error"><strong>Could not save active sweep</strong><ul>${options.errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
     : '';
-  const message = options.message ? `<div class="admin-alert success">${escapeHtml(options.message)}</div>` : '';
+  const message = options.message
+    ? `<div class="admin-alert success">${escapeHtml(options.message)}</div>`
+    : '';
 
   return `<!doctype html>
 <html lang="en">
