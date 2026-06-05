@@ -62,7 +62,6 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
             <span>${phaseCopy}</span>
           </div>
         </div>
-        <img src="/assets/world-cup-dashboard.png" width="480" height="270" alt="" />
       </section>
 
       <section class="spotlight-grid" aria-label="Sweep highlights">
@@ -84,68 +83,76 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
       </section>
 
       <section class="content-grid">
-        <div class="panel">
-          <div class="section-heading">
+        <details class="panel collapsible-panel participant-panel" open>
+          <summary>
             <div>
               <p class="eyebrow">${isActive ? 'Leaderboard' : 'Pre-allocation'}</p>
               <h2>Participants</h2>
             </div>
             <p id="last-updated">Awaiting results snapshot</p>
+          </summary>
+          <div class="collapsible-body">
+            <div id="contender-list" class="contender-list" aria-label="Participant contender status">
+              <p class="empty-copy">Loading participant status.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Participant</th>
+                    <th scope="col">Left</th>
+                    <th scope="col">Allocation</th>
+                    <th scope="col">Next match</th>
+                    <th scope="col">Run</th>
+                    <th scope="col">Prizes</th>
+                  </tr>
+                </thead>
+                <tbody>${participantRows}</tbody>
+              </table>
+            </div>
           </div>
-          <div id="contender-list" class="contender-list" aria-label="Participant contender status">
-            <p class="empty-copy">Loading participant status.</p>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Participant</th>
-                  <th scope="col">Left</th>
-                  <th scope="col">Allocation</th>
-                  <th scope="col">Next match</th>
-                  <th scope="col">Run</th>
-                  <th scope="col">Prizes</th>
-                </tr>
-              </thead>
-              <tbody>${participantRows}</tbody>
-            </table>
-          </div>
-        </div>
+        </details>
 
-        <aside class="panel side-panel" aria-label="Matches and nations">
-          <div class="match-countdowns">
-            <div class="section-heading compact">
+        <aside class="side-stack" aria-label="Matches and nations">
+          <details class="panel collapsible-panel match-countdowns-panel" open>
+            <summary>
               <div>
                 <p class="eyebrow">Fixtures</p>
                 <h2>Next 4 matches</h2>
               </div>
+            </summary>
+            <div class="collapsible-body">
+              <div id="match-countdowns-list" class="match-list">
+                <p class="empty-copy">Loading match countdowns.</p>
+              </div>
             </div>
-            <div id="match-countdowns-list" class="match-list">
-              <p class="empty-copy">Loading match countdowns.</p>
-            </div>
-          </div>
-          <div class="recent-results">
-            <div class="section-heading compact">
+          </details>
+          <details class="panel collapsible-panel recent-results-panel" open>
+            <summary>
               <div>
                 <p class="eyebrow">Results</p>
                 <h2>Latest winners</h2>
               </div>
+            </summary>
+            <div class="collapsible-body">
+              <div id="recent-results-list" class="match-list">
+                <p class="empty-copy">Loading recent results.</p>
+              </div>
             </div>
-            <div id="recent-results-list" class="match-list">
-              <p class="empty-copy">Loading recent results.</p>
-            </div>
-          </div>
-          <div class="nation-statuses">
-            <div class="section-heading compact">
+          </details>
+          <details class="panel collapsible-panel nation-statuses-panel" open>
+            <summary>
               <div>
                 <p class="eyebrow">Nations</p>
                 <h2>Cup status</h2>
               </div>
+            </summary>
+            <div class="collapsible-body">
+              <div id="nation-status-list" class="nation-status-list">
+                ${allNations.map((nation) => renderStatusChip(nation)).join('')}
+              </div>
             </div>
-            <div id="nation-status-list" class="nation-status-list">
-              ${allNations.map((nation) => renderStatusChip(nation)).join('')}
-            </div>
-          </div>
+          </details>
         </aside>
       </section>
     </main>

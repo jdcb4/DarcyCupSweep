@@ -105,24 +105,19 @@ img {
 }
 
 .dashboard-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
-  gap: 18px;
-  align-items: center;
-  min-height: 168px;
-  padding: 18px;
+  position: relative;
+  min-height: 136px;
+  padding: 16px;
   color: var(--text-on-strong);
-  background: var(--surface-strong);
+  background:
+    linear-gradient(90deg, rgb(23 39 31 / 0.96), rgb(23 39 31 / 0.82), rgb(23 39 31 / 0.54)),
+    url("/assets/world-cup-dashboard.png") center / cover;
   border-radius: var(--radius-panel);
   overflow: hidden;
 }
 
 .dashboard-header img {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  border-radius: var(--radius-control);
+  display: none;
 }
 
 .header-copy {
@@ -155,9 +150,9 @@ h2 {
 
 .summary {
   max-width: 620px;
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: rgb(247 255 244 / 0.82);
-  font-size: 1.08rem;
+  font-size: 0.98rem;
 }
 
 .phase-pill {
@@ -167,8 +162,8 @@ h2 {
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  margin-top: 14px;
-  padding: 8px 10px;
+  margin-top: 10px;
+  padding: 7px 9px;
   color: var(--text-on-strong);
   background: rgb(255 255 255 / 0.08);
   border-radius: var(--radius-control);
@@ -255,6 +250,7 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   gap: 16px;
+  align-items: start;
 }
 
 .panel {
@@ -268,6 +264,51 @@ h2 {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.side-stack {
+  display: grid;
+  gap: 16px;
+  align-self: start;
+}
+
+.collapsible-panel {
+  padding: 0;
+}
+
+.collapsible-panel > summary {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-panel > summary::after {
+  content: "Collapse";
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.collapsible-panel:not([open]) > summary::after {
+  content: "Open";
+}
+
+.collapsible-body {
+  padding: 0 18px 18px;
 }
 
 .section-heading > p {
@@ -350,6 +391,11 @@ h2 {
   color: var(--text-secondary);
   opacity: 0.64;
   text-decoration: line-through;
+}
+
+.mini-team.is-preview {
+  opacity: 0.6;
+  border-style: dashed;
 }
 
 .contender-run {
@@ -552,11 +598,6 @@ tbody th {
   font-size: 0.92rem;
 }
 
-.match-countdowns,
-.recent-results {
-  margin-top: 20px;
-}
-
 .section-heading.compact {
   margin-bottom: 10px;
 }
@@ -573,6 +614,11 @@ tbody th {
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-panel);
+}
+
+.match-item.is-preview {
+  opacity: 0.7;
+  border-style: dashed;
 }
 
 .match-card-header,
@@ -653,29 +699,51 @@ tbody th {
 }
 
 .nation-statuses {
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .nation-status-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .status-chip {
-  min-width: 154px;
+  position: relative;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 58px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-card);
   font-size: 0.84rem;
   font-weight: 800;
 }
 
+.status-chip .flag-img {
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 0;
+  opacity: 0.92;
+  mask-image: linear-gradient(90deg, #000 0%, #000 62%, transparent 100%);
+}
+
+.status-chip > span {
+  min-width: 0;
+  padding: 0 10px 0 2px;
+}
+
 .status-chip.eliminated {
   color: var(--text-secondary);
-  opacity: 0.62;
-  text-decoration: line-through;
+  opacity: 0.46;
+  filter: grayscale(1);
+  text-decoration: none;
 }
 
 .status-chip.active {
   border-color: var(--accent-primary);
+  box-shadow: inset 0 0 0 1px rgb(72 199 142 / 0.18);
 }
 
 .empty-copy {
@@ -945,7 +1013,7 @@ button:not(.nation-chip) {
     display: none;
   }
 
-  .side-panel {
+  .side-stack {
     order: -1;
   }
 

@@ -2,6 +2,13 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.0 - 2026-06-05
+
+- Split next matches, latest results, and cup status into separate collapsible panels.
+- Added preview placeholders for empty match, result, prize leader, and pre-draw participant states.
+- Shrunk the dashboard header and moved the hero image into a subdued background treatment.
+- Reworked nation status cards into flag-led rectangles with eliminated-state fading.
+
 ## 0.7.0 - 2026-06-05
 
 - Added server-side World Cup data polling with cached snapshots for public API routes.

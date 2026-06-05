@@ -52,17 +52,23 @@ function renderSpotlights(payload) {
   const nextMatch = payload.tracking.upcomingMatches[0];
   const latestResult = payload.tracking.recentResults[0];
 
-  setSpotlight('spotlight-leader', leader ? leader.participantName : 'No prize leader yet');
-  setSpotlight('spotlight-leader-detail', leader ? `${formatter.format(leader.prizeUsd)} won so far` : `${formatter.format(payload.sweep.buyInUsd * payload.sweep.participants.length)} pool`);
+  setSpotlight('spotlight-leader', leader ? leader.participantName : 'Preview: Darcy');
+  setSpotlight(
+    'spotlight-leader-detail',
+    leader ? `${formatter.format(leader.prizeUsd)} won so far` : `Prize leaders will appear here - ${formatter.format(payload.sweep.buyInUsd * payload.sweep.participants.length)} pool`
+  );
 
-  setSpotlight('spotlight-next-match', nextMatch ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam}` : 'No upcoming match');
-  setSpotlight('spotlight-next-detail', nextMatch ? `${ownershipSummary(nextMatch)} - ${new Date(nextMatch.utcDate).toLocaleString()}` : 'Awaiting fixtures');
+  setSpotlight('spotlight-next-match', nextMatch ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam}` : 'Preview: Team A vs Team B');
+  setSpotlight(
+    'spotlight-next-detail',
+    nextMatch ? `${ownershipSummary(nextMatch)} - ${new Date(nextMatch.utcDate).toLocaleString()}` : 'Upcoming sweep matchups will appear here'
+  );
 
   setSpotlight(
     'spotlight-last-result',
-    latestResult ? `${latestResult.homeTeam} ${latestResult.homeGoals ?? '-'} - ${latestResult.awayGoals ?? '-'} ${latestResult.awayTeam}` : 'No result yet'
+    latestResult ? `${latestResult.homeTeam} ${latestResult.homeGoals ?? '-'} - ${latestResult.awayGoals ?? '-'} ${latestResult.awayTeam}` : 'Preview: Team A 2 - 1 Team B'
   );
-  setSpotlight('spotlight-last-detail', latestResult ? ownershipSummary(latestResult) : 'Awaiting completed matches');
+  setSpotlight('spotlight-last-detail', latestResult ? ownershipSummary(latestResult) : 'Recent winners will appear here after matches finish');
 }
 
 function renderSpotlightError(error) {
@@ -96,10 +102,7 @@ function renderMatches(container, matches) {
   container.replaceChildren();
 
   if (visibleMatches.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-copy';
-    empty.textContent = 'No upcoming fixtures identified yet.';
-    container.append(empty);
+    container.append(renderPreviewMatchCard('upcoming'));
     return;
   }
 
@@ -123,10 +126,7 @@ function renderRecentResults(container, matches) {
   container.replaceChildren();
 
   if (visibleMatches.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-copy';
-    empty.textContent = 'No finished matches identified yet.';
-    container.append(empty);
+    container.append(renderPreviewMatchCard('result'));
     return;
   }
 
@@ -135,9 +135,32 @@ function renderRecentResults(container, matches) {
   }
 }
 
+function renderPreviewMatchCard(variant) {
+  return renderMatchCard(
+    {
+      id: `preview-${variant}`,
+      utcDate: new Date(Date.now() + 86400000).toISOString(),
+      round: 'Preview',
+      status: variant === 'result' ? 'finished' : 'scheduled',
+      homeTeam: 'Team A',
+      awayTeam: 'Team B',
+      homeFlagImageUrl: 'https://flagcdn.com/w80/mx.png',
+      awayFlagImageUrl: 'https://flagcdn.com/w80/za.png',
+      homeGoals: variant === 'result' ? 2 : null,
+      awayGoals: variant === 'result' ? 1 : null,
+      winnerTeam: variant === 'result' ? 'Team A' : null,
+      homeParticipantName: 'Darcy',
+      awayParticipantName: 'Joe',
+      participantNames: ['Darcy', 'Joe'],
+      isPreview: true
+    },
+    variant
+  );
+}
+
 function renderMatchCard(match, variant) {
   const item = document.createElement('article');
-  item.className = `match-item ${variant === 'result' ? 'is-result' : 'is-upcoming'}`;
+  item.className = `match-item ${variant === 'result' ? 'is-result' : 'is-upcoming'}${match.isPreview ? ' is-preview' : ''}`;
 
   const header = document.createElement('div');
   header.className = 'match-card-header';
@@ -189,7 +212,7 @@ function renderMatchCard(match, variant) {
 
   const owners = document.createElement('span');
   owners.className = 'match-owners';
-  owners.textContent = ownershipSummary(match);
+  owners.textContent = match.isPreview ? `Preview: ${ownershipSummary(match)}` : ownershipSummary(match);
 
   item.append(header, body, owners);
   return item;
@@ -249,9 +272,22 @@ function renderContenders(container, participants) {
     const teams = document.createElement('div');
     teams.className = 'contender-teams';
 
-    for (const team of participant.teams) {
+    const visibleTeams = participant.teams.length > 0
+      ? participant.teams
+      : [
+          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/mx.png' } },
+          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/za.png' } },
+          { status: 'active', nation: { name: 'Draw slot', code: 'TBD', flagImageUrl: 'https://flagcdn.com/w80/br.png' } }
+        ];
+
+    for (const team of visibleTeams) {
       const chip = document.createElement('span');
-      chip.className = team.status === 'active' ? 'mini-team country-card active' : 'mini-team country-card eliminated';
+      chip.className =
+        participant.teams.length === 0
+          ? 'mini-team country-card is-preview'
+          : team.status === 'active'
+            ? 'mini-team country-card active'
+            : 'mini-team country-card eliminated';
       chip.append(renderFlagImage(team.nation.flagImageUrl, team.nation.name));
       const text = document.createElement('span');
       const name = document.createElement('strong');
@@ -265,7 +301,7 @@ function renderContenders(container, participants) {
 
     const run = document.createElement('span');
     run.className = 'contender-run';
-    run.textContent = participant.runSummary;
+    run.textContent = participant.teams.length === 0 ? 'Preview: teams appear here after the draw' : participant.runSummary;
 
     card.append(header, teams, run);
     container.append(card);
