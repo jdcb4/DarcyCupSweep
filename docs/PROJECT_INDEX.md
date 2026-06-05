@@ -20,7 +20,7 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 - `src/config` - typed environment parsing.
 - `src/data` - local JSON sweep data, static nation metadata, and fixed demo snapshots.
 - `src/domain` - framework-independent sweep rules, prize calculations, and tracking derivation.
-- `src/services` - IO wrappers for sweep persistence and World Cup providers.
+- `src/services` - IO wrappers for sweep persistence, World Cup providers, and server-side snapshot polling.
 - `src/tests` - Vitest tests.
 - `public/assets` - static CSS, browser JavaScript, and local visual assets.
 - `docs` - durable project documentation.

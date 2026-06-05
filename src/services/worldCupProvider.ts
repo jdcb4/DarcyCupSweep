@@ -5,6 +5,7 @@ import { worldCupSnapshotSchema, type Match, type WorldCupSnapshot } from '../do
 
 export interface WorldCupProvider {
   getSnapshot(): Promise<WorldCupSnapshot>;
+  refreshRelevantSnapshot?(snapshot: WorldCupSnapshot, now?: Date): Promise<WorldCupSnapshot>;
 }
 
 const apiFootballFixtureSchema = z.object({
@@ -117,6 +118,24 @@ class ApiFootballProvider implements WorldCupProvider {
     });
   }
 
+  async refreshRelevantSnapshot(snapshot: WorldCupSnapshot, now = new Date()): Promise<WorldCupSnapshot> {
+    const relevantMatches = getApiFootballRelevantMatches(snapshot.matches, now);
+
+    if (relevantMatches.length === 0) {
+      return snapshot;
+    }
+
+    const refreshedMatches = await Promise.all(relevantMatches.map((match) => this.getFixtureById(match.id)));
+    const refreshedById = new Map(refreshedMatches.map((match) => [match.id, match]));
+
+    return worldCupSnapshotSchema.parse({
+      ...snapshot,
+      source: 'api-football',
+      updatedAt: new Date().toISOString(),
+      matches: snapshot.matches.map((match) => refreshedById.get(match.id) ?? match)
+    });
+  }
+
   private async getFixtures(): Promise<Match[]> {
     const url = new URL('/fixtures', this.env.API_FOOTBALL_BASE_URL);
     url.searchParams.set('league', '1');
@@ -124,22 +143,21 @@ class ApiFootballProvider implements WorldCupProvider {
 
     const payload = apiFootballFixturesSchema.parse(await this.getJson(url));
 
-    return payload.response.map((fixture) => {
-      const homeWinner = fixture.teams.home.winner === true;
-      const awayWinner = fixture.teams.away.winner === true;
+    return payload.response.map(mapApiFootballFixture);
+  }
 
-      return {
-        id: String(fixture.fixture.id),
-        utcDate: fixture.fixture.date,
-        round: fixture.league.round,
-        status: mapApiFootballStatus(fixture.fixture.status.short),
-        homeTeam: fixture.teams.home.name,
-        awayTeam: fixture.teams.away.name,
-        homeGoals: fixture.goals.home,
-        awayGoals: fixture.goals.away,
-        winnerTeam: homeWinner ? fixture.teams.home.name : awayWinner ? fixture.teams.away.name : null
-      };
-    });
+  private async getFixtureById(id: string): Promise<Match> {
+    const url = new URL('/fixtures', this.env.API_FOOTBALL_BASE_URL);
+    url.searchParams.set('id', id);
+
+    const payload = apiFootballFixturesSchema.parse(await this.getJson(url));
+    const fixture = payload.response[0];
+
+    if (!fixture) {
+      throw new Error(`API-FOOTBALL fixture ${id} was not found.`);
+    }
+
+    return mapApiFootballFixture(fixture);
   }
 
   private async getStandings() {
@@ -185,6 +203,34 @@ class ApiFootballProvider implements WorldCupProvider {
 
     return payload;
   }
+}
+
+function mapApiFootballFixture(fixture: z.infer<typeof apiFootballFixtureSchema>): Match {
+  const homeWinner = fixture.teams.home.winner === true;
+  const awayWinner = fixture.teams.away.winner === true;
+
+  return {
+    id: String(fixture.fixture.id),
+    utcDate: fixture.fixture.date,
+    round: fixture.league.round,
+    status: mapApiFootballStatus(fixture.fixture.status.short),
+    homeTeam: fixture.teams.home.name,
+    awayTeam: fixture.teams.away.name,
+    homeGoals: fixture.goals.home,
+    awayGoals: fixture.goals.away,
+    winnerTeam: homeWinner ? fixture.teams.home.name : awayWinner ? fixture.teams.away.name : null
+  };
+}
+
+function getApiFootballRelevantMatches(matches: Match[], now: Date): Match[] {
+  const nowMs = now.getTime();
+  const fifteenMinutes = 15 * 60 * 1000;
+  const threeHours = 3 * 60 * 60 * 1000;
+
+  return matches.filter((match) => {
+    const kickoff = new Date(match.utcDate).getTime();
+    return nowMs >= kickoff - fifteenMinutes && nowMs <= kickoff + threeHours;
+  });
 }
 
 class OpenFootballProvider implements WorldCupProvider {

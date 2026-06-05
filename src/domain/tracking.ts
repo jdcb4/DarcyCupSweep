@@ -25,6 +25,8 @@ export interface TrackedMatch {
   awayTeam: string;
   homeFlag: string;
   awayFlag: string;
+  homeFlagImageUrl: string;
+  awayFlagImageUrl: string;
   homeGoals: number | null;
   awayGoals: number | null;
   winnerTeam: string | null;
@@ -180,6 +182,8 @@ function toTrackedMatch(match: Match, nationByName: Map<string, Nation>, ownerBy
     awayTeam: match.awayTeam,
     homeFlag: homeNation?.flag ?? '',
     awayFlag: awayNation?.flag ?? '',
+    homeFlagImageUrl: homeNation?.flagImageUrl ?? '',
+    awayFlagImageUrl: awayNation?.flagImageUrl ?? '',
     homeGoals: match.homeGoals,
     awayGoals: match.awayGoals,
     winnerTeam: match.winnerTeam,

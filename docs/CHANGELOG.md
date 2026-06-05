@@ -2,6 +2,20 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.7.0 - 2026-06-05
+
+- Added server-side World Cup data polling with cached snapshots for public API routes.
+- Set OpenFootball polling to hourly, or every five minutes during the hour after nominal match end.
+- Set API-Football polling to hourly full refreshes, or ten-minute match-specific refreshes around match windows.
+
+## 0.6.0 - 2026-06-05
+
+- Switched the public UI to a darker visual theme.
+- Removed public provider status cards and team allocation count cards from the participant-facing dashboard.
+- Added frontloaded highlight cards for prize leader, next match, and latest result.
+- Replaced emoji flag displays with image-backed country cards across dashboard, schedule, and admin allocation UI.
+- Reordered mobile dashboard content so match and result information appears before the detailed participant table.
+
 ## 0.5.0 - 2026-06-05
 
 - Added `/matches`, a navigable page showing all upcoming World Cup matches.

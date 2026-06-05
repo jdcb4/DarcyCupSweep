@@ -11,9 +11,11 @@ import { calculateLeaderboard } from '../domain/sweep.js';
 import { buildSweepTracking } from '../domain/tracking.js';
 import { loadSweep, saveSweep } from '../services/sweepRepository.js';
 import { createWorldCupProvider } from '../services/worldCupProvider.js';
+import { WorldCupSnapshotService } from '../services/worldCupSnapshotService.js';
 import { renderAdminPage, renderDashboard, renderMatchesPage } from './html.js';
 
 export const app = new Hono();
+export const worldCupSnapshotService = new WorldCupSnapshotService(createWorldCupProvider(env), env.RESULTS_PROVIDER);
 
 app.use('/assets/*', serveStatic({ root: './public' }));
 
@@ -91,7 +93,7 @@ app.post('/admin', async (context) => {
 
 app.get('/api/sweep', async (context) => {
   const sweep = await loadSweep();
-  const snapshot = await createWorldCupProvider(env).getSnapshot();
+  const snapshot = await worldCupSnapshotService.getSnapshot();
 
   return context.json({
     sweep,
@@ -120,11 +122,13 @@ app.get('/api/demo/results', (context) =>
 );
 
 app.get('/api/world-cup', async (context) => {
-  const snapshot = await createWorldCupProvider(env).getSnapshot();
+  const snapshot = await worldCupSnapshotService.getSnapshot();
   return context.json(snapshot);
 });
 
 if (isDirectRun()) {
+  worldCupSnapshotService.start();
+
   serve(
     {
       fetch: app.fetch,

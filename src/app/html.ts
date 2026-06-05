@@ -1,8 +1,7 @@
 import type { Nation } from '../data/nations.js';
 import { nations as allNations } from '../data/nations.js';
 import type { Sweep } from '../domain/sweep.js';
-import { configuredTeamsCount, expectedTeamsCount, prizePoolUsd } from '../domain/sweep.js';
-import { tournamentSchedule } from '../config/tournament.js';
+import { prizePoolUsd } from '../domain/sweep.js';
 
 export interface DashboardRenderOptions {
   apiPath?: string;
@@ -56,8 +55,8 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
       <section class="dashboard-header" aria-labelledby="page-title">
         <div class="header-copy">
           <p class="eyebrow">2026 Football World Cup Sweep</p>
-          <h1 id="page-title">Sweep tracker</h1>
-          <p class="summary">16 players, 48 teams, and a $${prizePoolUsd(sweep)} prize pool tracked against group winners, runner-up, and champion results.</p>
+          <h1 id="page-title">Darcy Cup</h1>
+          <p class="summary">The sweep table, live fixtures, and latest results in one place.</p>
           <div class="phase-pill" data-sweep-status="${sweep.status}">
             <strong>${phaseLabel}</strong>
             <span>${phaseCopy}</span>
@@ -66,27 +65,21 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
         <img src="/assets/world-cup-dashboard.png" width="480" height="270" alt="" />
       </section>
 
-      <section class="countdown-grid" aria-label="Important countdowns">
-        ${renderCountdownCard(tournamentSchedule.sweepDraw.label, tournamentSchedule.sweepDraw.iso, tournamentSchedule.sweepDraw.display)}
-        ${renderCountdownCard(tournamentSchedule.worldCupKickoff.label, tournamentSchedule.worldCupKickoff.iso, tournamentSchedule.worldCupKickoff.display)}
-      </section>
-
-      <section class="metrics" aria-label="Sweep summary">
-        <article>
-          <span>Buy-in</span>
-          <strong>$${sweep.buyInUsd}</strong>
+      <section class="spotlight-grid" aria-label="Sweep highlights">
+        <article class="spotlight-card">
+          <span>Prize leader</span>
+          <strong id="spotlight-leader">Loading</strong>
+          <small id="spotlight-leader-detail">$${prizePoolUsd(sweep)} pool</small>
         </article>
-        <article>
-          <span>Prize pool</span>
-          <strong>$${prizePoolUsd(sweep)}</strong>
+        <article class="spotlight-card">
+          <span>Next match</span>
+          <strong id="spotlight-next-match">Loading</strong>
+          <small id="spotlight-next-detail">Awaiting fixtures</small>
         </article>
-        <article>
-          <span>Teams assigned</span>
-          <strong>${configuredTeamsCount(sweep)}/${expectedTeamsCount(sweep)}</strong>
-        </article>
-        <article>
-          <span>Live provider</span>
-          <strong id="provider-label">Loading</strong>
+        <article class="spotlight-card">
+          <span>Latest result</span>
+          <strong id="spotlight-last-result">Loading</strong>
+          <small id="spotlight-last-detail">Awaiting results</small>
         </article>
       </section>
 
@@ -119,19 +112,7 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
           </div>
         </div>
 
-        <aside class="panel side-panel" aria-labelledby="prizes-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Payouts</p>
-              <h2 id="prizes-title">Prize rules</h2>
-            </div>
-          </div>
-          <dl class="prize-list">
-            <div><dt>Champion</dt><dd>$${sweep.prizesUsd.champion}</dd></div>
-            <div><dt>Runner-up</dt><dd>$${sweep.prizesUsd.runnerUp}</dd></div>
-            <div><dt>Each group winner</dt><dd>$${sweep.prizesUsd.groupWinner}</dd></div>
-          </dl>
-          <div class="status-box" id="provider-status">Loading latest World Cup snapshot.</div>
+        <aside class="panel side-panel" aria-label="Matches and nations">
           <div class="match-countdowns">
             <div class="section-heading compact">
               <div>
@@ -162,7 +143,7 @@ export function renderDashboard(sweep: Sweep, options: DashboardRenderOptions = 
               </div>
             </div>
             <div id="nation-status-list" class="nation-status-list">
-              ${allNations.map((nation) => `<span class="status-chip" data-nation-status="${escapeHtml(nation.name)}">${nation.flag} ${escapeHtml(nation.name)}</span>`).join('')}
+              ${allNations.map((nation) => renderStatusChip(nation)).join('')}
             </div>
           </div>
         </aside>
@@ -193,7 +174,6 @@ export function renderMatchesPage(apiPath = '/api/sweep'): string {
             <p class="schedule-intro">Kickoff times are shown in Australian Eastern time and update from the configured World Cup data provider.</p>
           </div>
           <div class="schedule-meta">
-            <span id="schedule-provider">Loading provider</span>
             <span id="schedule-updated">Awaiting snapshot</span>
           </div>
         </div>
@@ -288,14 +268,6 @@ export function renderAdminPage(sweep: Sweep, nations: Nation[], options: AdminR
 </html>`;
 }
 
-function renderCountdownCard(label: string, iso: string, display: string): string {
-  return `<article class="countdown-card">
-    <span>${escapeHtml(label)}</span>
-    <strong data-countdown-target="${escapeHtml(iso)}">Calculating</strong>
-    <time datetime="${escapeHtml(iso)}">${escapeHtml(display)}</time>
-  </article>`;
-}
-
 function renderSiteNav(active: 'dashboard' | 'matches'): string {
   return `<nav class="site-nav" aria-label="Primary navigation">
     <a href="/" ${active === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a>
@@ -316,12 +288,22 @@ function renderParticipantName(name: string, index: number): string {
 }
 
 function renderNationChip(nation: Nation): string {
-  return `<button class="nation-chip" type="button" draggable="true" data-team="${escapeHtml(nation.name)}"><span aria-hidden="true">${nation.flag}</span><span>${escapeHtml(nation.name)}</span></button>`;
+  return `<button class="nation-chip country-card" type="button" draggable="true" data-team="${escapeHtml(nation.name)}">${renderFlagImage(nation)}<span><strong>${escapeHtml(nation.name)}</strong><small>${escapeHtml(nation.code)}</small></span></button>`;
 }
 
 function renderTeamLabel(team: string): string {
   const nation = allNations.find((candidate) => candidate.name === team);
-  return `${nation ? `<span aria-hidden="true">${nation.flag}</span> ` : ''}${escapeHtml(team)}`;
+  return nation
+    ? `${renderFlagImage(nation)}<span><strong>${escapeHtml(team)}</strong><small>${escapeHtml(nation.code)}</small></span>`
+    : `<span><strong>${escapeHtml(team)}</strong></span>`;
+}
+
+function renderStatusChip(nation: Nation): string {
+  return `<span class="status-chip country-card" data-nation-status="${escapeHtml(nation.name)}">${renderFlagImage(nation)}<span><strong>${escapeHtml(nation.name)}</strong><small>${escapeHtml(nation.code)}</small></span></span>`;
+}
+
+function renderFlagImage(nation: Nation): string {
+  return `<img class="flag-img" src="${escapeHtml(nation.flagImageUrl)}" width="40" height="30" alt="${escapeHtml(`${nation.name} flag`)}" loading="lazy" />`;
 }
 
 export function escapeHtml(value: string): string {

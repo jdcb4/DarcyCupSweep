@@ -16,7 +16,6 @@ const timeFormatter = new Intl.DateTimeFormat('en-AU', {
 async function refreshSchedule() {
   const shell = document.querySelector('[data-api-path]');
   const apiPath = shell?.dataset.apiPath ?? '/api/sweep';
-  const provider = document.querySelector('#schedule-provider');
   const updated = document.querySelector('#schedule-updated');
   const list = document.querySelector('#all-upcoming-matches');
 
@@ -30,11 +29,9 @@ async function refreshSchedule() {
     const payload = await response.json();
     const matches = payload.tracking.allUpcomingMatches ?? payload.tracking.upcomingMatches ?? [];
 
-    provider.textContent = `Provider: ${payload.snapshot.source}`;
     updated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`;
     renderSchedule(list, matches);
   } catch (error) {
-    provider.textContent = 'Provider unavailable';
     updated.textContent = error instanceof Error ? error.message : 'Unable to load upcoming matches.';
     renderSchedule(list, []);
   }
@@ -103,7 +100,10 @@ function renderScheduleCard(match) {
 
   const teams = document.createElement('div');
   teams.className = 'schedule-teams';
-  teams.append(renderTeam(match.homeFlag, match.homeTeam, match.homeParticipantName), renderTeam(match.awayFlag, match.awayTeam, match.awayParticipantName));
+  teams.append(
+    renderTeam(match.homeFlagImageUrl, match.homeTeam, match.homeParticipantName),
+    renderTeam(match.awayFlagImageUrl, match.awayTeam, match.awayParticipantName)
+  );
 
   const owners = document.createElement('span');
   owners.className = 'match-owners';
@@ -113,13 +113,13 @@ function renderScheduleCard(match) {
   return card;
 }
 
-function renderTeam(flag, team, participantName) {
+function renderTeam(flagImageUrl, team, participantName) {
   const row = document.createElement('div');
   row.className = 'match-team-row';
 
   const label = document.createElement('span');
   label.className = 'match-team-name';
-  label.textContent = `${flag} ${team}`;
+  label.append(renderFlagImage(flagImageUrl, team), document.createTextNode(team));
 
   const owner = document.createElement('span');
   owner.className = participantName ? 'owner-pill' : 'owner-pill empty-owner';
@@ -127,6 +127,17 @@ function renderTeam(flag, team, participantName) {
 
   row.append(label, owner);
   return row;
+}
+
+function renderFlagImage(flagImageUrl, team) {
+  const image = document.createElement('img');
+  image.className = 'flag-img';
+  image.src = flagImageUrl;
+  image.width = 40;
+  image.height = 30;
+  image.alt = `${team} flag`;
+  image.loading = 'lazy';
+  return image;
 }
 
 function ownershipSummary(match) {

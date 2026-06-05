@@ -1,18 +1,19 @@
 :root {
-  --surface-base: #f6f7f1;
-  --surface-raised: #ffffff;
-  --surface-sunken: #edf1e8;
-  --surface-strong: #12362b;
-  --text-primary: #15201d;
-  --text-secondary: #56645f;
-  --text-on-strong: #f7fff4;
-  --accent-primary: #1c7c54;
-  --accent-secondary: #d2a24c;
-  --accent-info: #2477a9;
-  --accent-danger: #b23b3b;
-  --border-subtle: #dfe5da;
-  --border-strong: #b8c4b2;
-  --shadow-panel: 0 18px 50px rgb(18 54 43 / 0.12);
+  --surface-base: #090f0d;
+  --surface-raised: #111a17;
+  --surface-sunken: #0d1512;
+  --surface-strong: #17271f;
+  --surface-card: #15211c;
+  --text-primary: #f3f8f4;
+  --text-secondary: #a9b7b0;
+  --text-on-strong: #f8fff8;
+  --accent-primary: #48c78e;
+  --accent-secondary: #e0b84f;
+  --accent-info: #66b7d8;
+  --accent-danger: #ef6f6f;
+  --border-subtle: #26352f;
+  --border-strong: #3e554b;
+  --shadow-panel: 0 18px 50px rgb(0 0 0 / 0.34);
   --radius-panel: 8px;
   --radius-control: 6px;
   --font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -24,7 +25,9 @@
 
 html {
   color: var(--text-primary);
-  background: var(--surface-base);
+  background:
+    radial-gradient(circle at top left, rgb(72 199 142 / 0.12), transparent 32rem),
+    var(--surface-base);
   font-family: var(--font-family);
   line-height: 1.5;
 }
@@ -103,11 +106,11 @@ img {
 
 .dashboard-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 18px;
   align-items: center;
-  min-height: 280px;
-  padding: 28px;
+  min-height: 168px;
+  padding: 18px;
   color: var(--text-on-strong);
   background: var(--surface-strong);
   border-radius: var(--radius-panel);
@@ -141,7 +144,7 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  font-size: clamp(2rem, 5vw, 3.2rem);
   line-height: 1;
 }
 
@@ -152,7 +155,7 @@ h2 {
 
 .summary {
   max-width: 620px;
-  margin: 16px 0 0;
+  margin: 10px 0 0;
   color: rgb(247 255 244 / 0.82);
   font-size: 1.08rem;
 }
@@ -164,15 +167,15 @@ h2 {
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  margin-top: 20px;
-  padding: 10px 12px;
-  color: var(--text-primary);
-  background: rgb(247 255 244 / 0.9);
+  margin-top: 14px;
+  padding: 8px 10px;
+  color: var(--text-on-strong);
+  background: rgb(255 255 255 / 0.08);
   border-radius: var(--radius-control);
 }
 
 .phase-pill span {
-  color: var(--text-secondary);
+  color: rgb(243 248 244 / 0.72);
 }
 
 .countdown-grid {
@@ -210,14 +213,14 @@ h2 {
   font-size: 0.92rem;
 }
 
-.metrics {
+.spotlight-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 16px 0;
 }
 
-.metrics article,
+.spotlight-card,
 .panel {
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -225,22 +228,27 @@ h2 {
   box-shadow: var(--shadow-panel);
 }
 
-.metrics article {
-  min-height: 96px;
+.spotlight-card {
+  display: grid;
+  gap: 7px;
+  min-height: 116px;
   padding: 16px;
 }
 
-.metrics span,
+.spotlight-card span,
 .section-heading > p,
 .prize-list dt {
   color: var(--text-secondary);
 }
 
-.metrics strong {
+.spotlight-card strong {
   display: block;
-  margin-top: 8px;
-  font-size: 1.7rem;
+  font-size: 1.32rem;
   line-height: 1.1;
+}
+
+.spotlight-card small {
+  color: var(--text-secondary);
 }
 
 .content-grid {
@@ -332,11 +340,8 @@ h2 {
 .mini-team {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 2px 6px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-control);
+  min-height: 40px;
+  padding: 5px 6px;
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -463,22 +468,53 @@ tbody th {
 .team-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-.team-list li,
+.team-list li {
+  display: inline-flex;
+}
+
+.country-card,
 .empty-state {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 3px 8px;
-  background: var(--surface-sunken);
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 8px;
+  background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-control);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
+}
+
+.country-card > span {
+  display: grid;
+  gap: 1px;
+}
+
+.country-card strong {
+  line-height: 1.05;
+}
+
+.country-card small {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.flag-img {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 24px;
+  object-fit: cover;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
 }
 
 .empty-state {
@@ -578,6 +614,9 @@ tbody th {
 }
 
 .match-team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text-primary);
   font-weight: 900;
 }
@@ -624,13 +663,7 @@ tbody th {
 }
 
 .status-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding: 4px 8px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  min-width: 154px;
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -774,15 +807,6 @@ tbody th {
 }
 
 .nation-chip {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  min-height: 34px;
-  padding: 5px 9px;
-  color: var(--text-primary);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
   font: inherit;
   font-size: 0.88rem;
   font-weight: 800;
@@ -877,7 +901,7 @@ button:not(.nation-chip) {
 @media (max-width: 860px) {
   .dashboard-header,
   .content-grid,
-  .metrics,
+  .spotlight-grid,
   .countdown-grid,
   .admin-grid,
   .schedule-day-grid {
@@ -917,7 +941,15 @@ button:not(.nation-chip) {
     padding: 22px;
   }
 
-  .metrics article {
+  .dashboard-header img {
+    display: none;
+  }
+
+  .side-panel {
+    order: -1;
+  }
+
+  .spotlight-card {
     min-height: 84px;
   }
 }
