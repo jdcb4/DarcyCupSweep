@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { nations } from '../data/nations.js';
-import { calculateLeaderboard, getActivationIssues, prizePoolUsd, type Sweep, type WorldCupSnapshot } from '../domain/sweep.js';
+import {
+  calculateLeaderboard,
+  getActivationIssues,
+  prizePoolUsd,
+  type Sweep,
+  type WorldCupSnapshot
+} from '../domain/sweep.js';
 import { buildSweepTracking } from '../domain/tracking.js';
 import { parseOpenFootballMatches } from '../services/worldCupProvider.js';
 
@@ -202,7 +208,9 @@ Croatia @ Al Janoub Stadium, Al Wakrah
       {
         ...sweep,
         participants: sweep.participants.map((participant) =>
-          participant.name === 'Darcy' ? { ...participant, teams: ['Argentina', 'Australia', 'Brazil'] } : participant
+          participant.name === 'Darcy'
+            ? { ...participant, teams: ['Argentina', 'Australia', 'Brazil'] }
+            : participant
         )
       },
       {
@@ -237,13 +245,67 @@ Croatia @ Al Janoub Stadium, Al Wakrah
       nations
     );
 
-    const darcy = tracking.participants.find((participant) => participant.participantName === 'Darcy');
+    const darcy = tracking.participants.find(
+      (participant) => participant.participantName === 'Darcy'
+    );
 
     expect(darcy?.teamsLeft).toBe(2);
     expect(darcy?.nextMatch?.id).toBe('next');
-    expect(tracking.upcomingMatches[0]?.participantNames).toEqual(['Darcy', 'Joe']);
+    expect(tracking.upcomingMatches[0]?.participantNames).toEqual([
+      'Darcy',
+      'Joe'
+    ]);
     expect(tracking.upcomingMatches[0]?.homeParticipantName).toBe('Darcy');
     expect(tracking.upcomingMatches[0]?.awayParticipantName).toBe('Joe');
-    expect(tracking.nations.find((team) => team.nation.name === 'Australia')?.status).toBe('eliminated');
+    expect(
+      tracking.nations.find((team) => team.nation.name === 'Australia')?.status
+    ).toBe('eliminated');
+  });
+
+  it('matches accented provider team names to unaccented stored allocations', () => {
+    const tracking = buildSweepTracking(
+      {
+        ...sweep,
+        participants: sweep.participants.map((participant) =>
+          participant.name === 'Lemmo'
+            ? { ...participant, teams: ['Germany'] }
+            : participant.name === 'Emma'
+              ? { ...participant, teams: ['Curacao'] }
+              : participant
+        )
+      },
+      {
+        source: 'test',
+        updatedAt: '2026-06-18T00:00:00.000Z',
+        standings: [],
+        matches: [
+          {
+            id: 'curacao',
+            utcDate: '2026-06-18T00:00:00.000Z',
+            round: 'Group E',
+            status: 'scheduled',
+            homeTeam: 'Germany',
+            awayTeam: 'Cura\u00e7ao',
+            homeGoals: null,
+            awayGoals: null,
+            winnerTeam: null
+          }
+        ]
+      },
+      nations
+    );
+
+    expect(tracking.upcomingMatches[0]?.homeParticipantName).toBe('Lemmo');
+    expect(tracking.upcomingMatches[0]?.awayParticipantName).toBe('Emma');
+    expect(tracking.upcomingMatches[0]?.participantNames).toEqual([
+      'Lemmo',
+      'Emma'
+    ]);
+    expect(tracking.upcomingMatches[0]?.awayFlagImageUrl).toContain('/cw.png');
+    expect(
+      tracking.participants.find(
+        (participant) => participant.participantName === 'Emma'
+      )?.nextMatch?.id
+    ).toBe('curacao');
   });
 });

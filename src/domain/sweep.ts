@@ -20,7 +20,10 @@ export const sweepSchema = z
     participants: z.array(participantSchema).length(16)
   })
   .superRefine((sweep, context) => {
-    const totalTeams = sweep.participants.reduce((sum, participant) => sum + participant.teams.length, 0);
+    const totalTeams = sweep.participants.reduce(
+      (sum, participant) => sum + participant.teams.length,
+      0
+    );
     const expectedTeams = sweep.participants.length * sweep.teamsPerParticipant;
 
     if (totalTeams > expectedTeams) {
@@ -80,7 +83,10 @@ export interface ParticipantStanding {
   prizeEvents: PrizeEvent[];
 }
 
-export function calculatePrizeEvents(sweep: Sweep, snapshot: WorldCupSnapshot): PrizeEvent[] {
+export function calculatePrizeEvents(
+  sweep: Sweep,
+  snapshot: WorldCupSnapshot
+): PrizeEvent[] {
   const groupWinners = snapshot.standings
     .filter((standing) => standing.rank === 1)
     .map((standing) => ({
@@ -89,13 +95,19 @@ export function calculatePrizeEvents(sweep: Sweep, snapshot: WorldCupSnapshot): 
       amountUsd: sweep.prizesUsd.groupWinner
     }));
 
-  const final = snapshot.matches.find((match) => match.round.toLowerCase().includes('final') && match.status === 'finished');
+  const final = snapshot.matches.find(
+    (match) =>
+      match.round.toLowerCase().includes('final') && match.status === 'finished'
+  );
 
   if (!final?.winnerTeam) {
     return groupWinners;
   }
 
-  const runnerUp = normalizeTeamName(final.homeTeam) === normalizeTeamName(final.winnerTeam) ? final.awayTeam : final.homeTeam;
+  const runnerUp =
+    normalizeTeamName(final.homeTeam) === normalizeTeamName(final.winnerTeam)
+      ? final.awayTeam
+      : final.homeTeam;
 
   return [
     ...groupWinners,
@@ -112,22 +124,36 @@ export function calculatePrizeEvents(sweep: Sweep, snapshot: WorldCupSnapshot): 
   ];
 }
 
-export function calculateLeaderboard(sweep: Sweep, snapshot: WorldCupSnapshot): ParticipantStanding[] {
+export function calculateLeaderboard(
+  sweep: Sweep,
+  snapshot: WorldCupSnapshot
+): ParticipantStanding[] {
   const prizeEvents = calculatePrizeEvents(sweep, snapshot);
 
   return sweep.participants
     .map((participant) => {
-      const participantTeamNames = new Set(participant.teams.map(normalizeTeamName));
-      const participantEvents = prizeEvents.filter((event) => participantTeamNames.has(normalizeTeamName(event.teamName)));
+      const participantTeamNames = new Set(
+        participant.teams.map(normalizeTeamName)
+      );
+      const participantEvents = prizeEvents.filter((event) =>
+        participantTeamNames.has(normalizeTeamName(event.teamName))
+      );
 
       return {
         participantName: participant.name,
         teams: participant.teams,
-        prizeUsd: participantEvents.reduce((sum, event) => sum + event.amountUsd, 0),
+        prizeUsd: participantEvents.reduce(
+          (sum, event) => sum + event.amountUsd,
+          0
+        ),
         prizeEvents: participantEvents
       };
     })
-    .sort((left, right) => right.prizeUsd - left.prizeUsd || left.participantName.localeCompare(right.participantName));
+    .sort(
+      (left, right) =>
+        right.prizeUsd - left.prizeUsd ||
+        left.participantName.localeCompare(right.participantName)
+    );
 }
 
 export function prizePoolUsd(sweep: Sweep): number {
@@ -135,21 +161,31 @@ export function prizePoolUsd(sweep: Sweep): number {
 }
 
 export function configuredTeamsCount(sweep: Sweep): number {
-  return sweep.participants.reduce((sum, participant) => sum + participant.teams.length, 0);
+  return sweep.participants.reduce(
+    (sum, participant) => sum + participant.teams.length,
+    0
+  );
 }
 
 export function expectedTeamsCount(sweep: Sweep): number {
   return sweep.participants.length * sweep.teamsPerParticipant;
 }
 
-export function getActivationIssues(sweep: Sweep, allowedTeamNames?: string[]): string[] {
+export function getActivationIssues(
+  sweep: Sweep,
+  allowedTeamNames?: string[]
+): string[] {
   const issues: string[] = [];
   const teamCounts = new Map<string, number>();
-  const allowedTeams = allowedTeamNames ? new Set(allowedTeamNames.map(normalizeTeamName)) : null;
+  const allowedTeams = allowedTeamNames
+    ? new Set(allowedTeamNames.map(normalizeTeamName))
+    : null;
 
   for (const participant of sweep.participants) {
     if (participant.teams.length !== sweep.teamsPerParticipant) {
-      issues.push(`${participant.name} needs exactly ${sweep.teamsPerParticipant} teams.`);
+      issues.push(
+        `${participant.name} needs exactly ${sweep.teamsPerParticipant} teams.`
+      );
     }
 
     for (const team of participant.teams) {
@@ -162,19 +198,27 @@ export function getActivationIssues(sweep: Sweep, allowedTeamNames?: string[]): 
     }
   }
 
-  const duplicates = [...teamCounts.entries()].filter(([, count]) => count > 1).map(([team]) => team);
+  const duplicates = [...teamCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([team]) => team);
 
   if (duplicates.length > 0) {
     issues.push(`Duplicate teams are not allowed: ${duplicates.join(', ')}.`);
   }
 
   if (configuredTeamsCount(sweep) !== expectedTeamsCount(sweep)) {
-    issues.push(`Sweep needs ${expectedTeamsCount(sweep)} total teams before activation.`);
+    issues.push(
+      `Sweep needs ${expectedTeamsCount(sweep)} total teams before activation.`
+    );
   }
 
   return issues;
 }
 
 export function normalizeTeamName(teamName: string): string {
-  return teamName.trim().toLocaleLowerCase('en-US');
+  return teamName
+    .trim()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('en-US');
 }

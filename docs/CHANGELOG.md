@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.4 - 2026-06-10
+
+- Made team ownership matching accent-insensitive so provider names like `Curaçao` match stored allocations like `Curacao` without changing existing saved sweep data.
+
 ## 0.8.3 - 2026-06-05
 
 - Restored the pre-sweep draw countdown as the lead dashboard item until the sweep is activated.
