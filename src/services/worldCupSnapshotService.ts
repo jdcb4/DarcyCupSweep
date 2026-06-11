@@ -70,6 +70,10 @@ export class WorldCupSnapshotService {
     return this.snapshot;
   }
 
+  async refreshNow(): Promise<WorldCupSnapshot> {
+    return this.refresh('full');
+  }
+
   private scheduleNext(): void {
     if (this.stopped) {
       return;

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { WorldCupSnapshot } from '../domain/sweep.js';
-import { getPollingDecision } from '../services/worldCupSnapshotService.js';
+import {
+  getPollingDecision,
+  WorldCupSnapshotService
+} from '../services/worldCupSnapshotService.js';
 
 const snapshot: WorldCupSnapshot = {
   source: 'test',
@@ -85,5 +88,31 @@ describe('World Cup polling schedule', () => {
       intervalMs: 60 * 60 * 1000,
       mode: 'full'
     });
+  });
+
+  it('allows admins to force a full provider refresh into the cache', async () => {
+    let calls = 0;
+    const service = new WorldCupSnapshotService(
+      {
+        async getSnapshot() {
+          calls += 1;
+
+          return {
+            ...snapshot,
+            updatedAt: `2026-06-11T0${calls}:00:00.000Z`
+          };
+        }
+      },
+      'mock'
+    );
+
+    await service.getSnapshot();
+    const refreshed = await service.refreshNow();
+
+    expect(calls).toBe(2);
+    expect(refreshed.updatedAt).toBe('2026-06-11T02:00:00.000Z');
+    expect(service.getCachedSnapshot()?.updatedAt).toBe(
+      '2026-06-11T02:00:00.000Z'
+    );
   });
 });

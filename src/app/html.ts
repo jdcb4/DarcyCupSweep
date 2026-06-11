@@ -226,6 +226,7 @@ export function renderMatchesPage(apiPath = '/api/sweep'): string {
 
 export interface AdminRenderOptions {
   message?: string;
+  errorTitle?: string;
   errors?: string[];
 }
 
@@ -269,7 +270,7 @@ export function renderAdminPage(
     .join('');
 
   const errors = options.errors?.length
-    ? `<div class="admin-alert error"><strong>Could not save active sweep</strong><ul>${options.errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
+    ? `<div class="admin-alert error"><strong>${escapeHtml(options.errorTitle ?? 'Could not save active sweep')}</strong><ul>${options.errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
     : '';
   const message = options.message
     ? `<div class="admin-alert success">${escapeHtml(options.message)}</div>`
@@ -298,6 +299,16 @@ export function renderAdminPage(
         <p class="admin-intro">Assign three unique participating nations to each participant, then confirm the sweep is active.</p>
         ${message}
         ${errors}
+        <section class="admin-action-panel" aria-labelledby="refresh-results-title">
+          <div>
+            <p class="eyebrow">Results data</p>
+            <h2 id="refresh-results-title">Provider refresh</h2>
+            <p>Force the server cache to fetch the latest World Cup snapshot from the configured provider.</p>
+          </div>
+          <form method="post" action="/admin/refresh-results" class="admin-action-form">
+            <button type="submit">Refresh World Cup data</button>
+          </form>
+        </section>
         <form method="post" action="/admin" class="admin-form">
           <section class="nation-pool" aria-labelledby="nation-pool-title">
             <div class="section-heading compact">

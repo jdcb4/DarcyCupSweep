@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.9.2 - 2026-06-12
+
+- Added a protected `/admin/refresh-results` action for manually refreshing the cached World Cup provider snapshot.
+- Added an admin panel control to trigger the provider refresh without changing sweep allocations.
+
 ## 0.9.1 - 2026-06-12
 
 - Canonicalized football-data.org team names using team codes so provider names like `United States`, `Congo DR`, and `Curaçao` match app allocations.

@@ -35,6 +35,7 @@ pnpm run dev
 ## Admin
 
 `/admin` lets you drag all 48 participating nations into each participant's allocation and confirm the sweep is active. It is disabled until `ADMIN_PASSWORD` is set.
+It also includes a protected control for manually refreshing the cached World Cup provider data.
 
 ```powershell
 $env:ADMIN_PASSWORD = "<local password>"

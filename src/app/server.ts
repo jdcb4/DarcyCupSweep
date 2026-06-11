@@ -3,9 +3,17 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { AdminValidationError, parseAdminSweepForm, requireAdmin } from './admin.js';
+import {
+  AdminValidationError,
+  parseAdminSweepForm,
+  requireAdmin
+} from './admin.js';
 import { env } from '../config/env.js';
-import { demoFirstDozenResultsSnapshot, demoNoResultsSnapshot, demoSweep } from '../data/demo.js';
+import {
+  demoFirstDozenResultsSnapshot,
+  demoNoResultsSnapshot,
+  demoSweep
+} from '../data/demo.js';
 import { nations } from '../data/nations.js';
 import { calculateLeaderboard } from '../domain/sweep.js';
 import { buildSweepTracking } from '../domain/tracking.js';
@@ -15,7 +23,10 @@ import { WorldCupSnapshotService } from '../services/worldCupSnapshotService.js'
 import { renderAdminPage, renderDashboard, renderMatchesPage } from './html.js';
 
 export const app = new Hono();
-export const worldCupSnapshotService = new WorldCupSnapshotService(createWorldCupProvider(env), env.RESULTS_PROVIDER);
+export const worldCupSnapshotService = new WorldCupSnapshotService(
+  createWorldCupProvider(env),
+  env.RESULTS_PROVIDER
+);
 
 app.use('/assets/*', serveStatic({ root: './public' }));
 
@@ -63,6 +74,37 @@ app.get('/admin', async (context) => {
   return context.html(renderAdminPage(sweep, nations));
 });
 
+app.post('/admin/refresh-results', async (context) => {
+  const authResponse = requireAdmin(context);
+
+  if (authResponse) {
+    return authResponse;
+  }
+
+  const sweep = await loadSweep();
+
+  try {
+    const snapshot = await worldCupSnapshotService.refreshNow();
+
+    return context.html(
+      renderAdminPage(sweep, nations, {
+        message: `World Cup data refreshed. Loaded ${snapshot.matches.length} matches and ${snapshot.standings.length} standings rows.`
+      })
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'World Cup data refresh failed.';
+
+    return context.html(
+      renderAdminPage(sweep, nations, {
+        errorTitle: 'Could not refresh World Cup data',
+        errors: [message]
+      }),
+      502
+    );
+  }
+});
+
 app.post('/admin', async (context) => {
   const authResponse = requireAdmin(context);
 
@@ -81,10 +123,15 @@ app.post('/admin', async (context) => {
     );
     const savedSweep = await saveSweep(nextSweep);
 
-    return context.html(renderAdminPage(savedSweep, nations, { message: 'Sweep saved.' }));
+    return context.html(
+      renderAdminPage(savedSweep, nations, { message: 'Sweep saved.' })
+    );
   } catch (error) {
     if (error instanceof AdminValidationError) {
-      return context.html(renderAdminPage(error.sweep, nations, { errors: error.issues }), 400);
+      return context.html(
+        renderAdminPage(error.sweep, nations, { errors: error.issues }),
+        400
+      );
     }
 
     throw error;
@@ -116,7 +163,11 @@ app.get('/api/demo/results', (context) =>
   context.json({
     sweep: demoSweep,
     leaderboard: calculateLeaderboard(demoSweep, demoFirstDozenResultsSnapshot),
-    tracking: buildSweepTracking(demoSweep, demoFirstDozenResultsSnapshot, nations),
+    tracking: buildSweepTracking(
+      demoSweep,
+      demoFirstDozenResultsSnapshot,
+      nations
+    ),
     snapshot: demoFirstDozenResultsSnapshot
   })
 );
@@ -135,7 +186,9 @@ if (isDirectRun()) {
       port: env.PORT
     },
     (info) => {
-      console.log(`World Cup Tracker listening on http://localhost:${info.port}`);
+      console.log(
+        `World Cup Tracker listening on http://localhost:${info.port}`
+      );
     }
   );
 }

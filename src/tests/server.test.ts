@@ -29,7 +29,9 @@ describe('server', () => {
     expect(payload.tracking.allUpcomingMatches).toHaveLength(4);
     expect(payload.tracking.upcomingMatches).toHaveLength(4);
     expect(payload.tracking.recentResults).toHaveLength(4);
-    expect(payload.tracking.recentResults[0].participantNames.length).toBeGreaterThan(0);
+    expect(
+      payload.tracking.recentResults[0].participantNames.length
+    ).toBeGreaterThan(0);
   });
 
   it('renders the all upcoming matches page', async () => {
@@ -40,5 +42,14 @@ describe('server', () => {
     expect(html).toContain('Upcoming Matches | World Cup Sweep Tracker');
     expect(html).toContain('Australian Eastern time');
     expect(html).toContain('/assets/matches.js');
+  });
+
+  it('does not expose the manual provider refresh action without admin configuration', async () => {
+    const response = await app.request('/admin/refresh-results', {
+      method: 'POST'
+    });
+
+    expect(response.status).toBe(503);
+    expect(await response.text()).toContain('Admin is disabled');
   });
 });
