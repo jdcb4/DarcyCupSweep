@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import type { AppEnv } from '../config/env.js';
 import { worldCupKickoffAtIso } from '../config/tournament.js';
+import { nations } from '../data/nations.js';
 import {
+  normalizeTeamName,
   worldCupSnapshotSchema,
+  type GroupStanding,
   type Match,
   type WorldCupSnapshot
 } from '../domain/sweep.js';
@@ -117,31 +120,6 @@ const footballDataSingleMatchSchema = z.object({
   match: footballDataMatchSchema
 });
 
-const footballDataStandingsSchema = z.object({
-  standings: z.array(
-    z
-      .object({
-        type: z.string().optional(),
-        group: z.string().nullable().optional(),
-        table: z.array(
-          z
-            .object({
-              position: z.number().int().positive(),
-              team: footballDataTeamSchema,
-              points: z.number().int().nonnegative().nullable().optional(),
-              playedGames: z.number().int().nonnegative().nullable().optional(),
-              won: z.number().int().nonnegative().nullable().optional(),
-              draw: z.number().int().nonnegative().nullable().optional(),
-              lost: z.number().int().nonnegative().nullable().optional(),
-              goalDifference: z.number().int().nullable().optional()
-            })
-            .passthrough()
-        )
-      })
-      .passthrough()
-  )
-});
-
 export function createWorldCupProvider(env: AppEnv): WorldCupProvider {
   if (env.RESULTS_PROVIDER === 'football-data') {
     return new FootballDataProvider(env);
@@ -191,16 +169,13 @@ class FootballDataProvider implements WorldCupProvider {
       );
     }
 
-    const [matches, standings] = await Promise.all([
-      this.getMatches(),
-      this.getStandings()
-    ]);
+    const matches = await this.getMatches();
 
     return worldCupSnapshotSchema.parse({
       source: 'football-data',
       updatedAt: new Date().toISOString(),
       matches,
-      standings
+      standings: deriveGroupStandings(matches)
     });
   }
 
@@ -252,33 +227,6 @@ class FootballDataProvider implements WorldCupProvider {
     );
 
     return mapFootballDataMatch(payload.match);
-  }
-
-  private async getStandings() {
-    const url = this.url(
-      `competitions/${encodeURIComponent(this.env.FOOTBALL_DATA_COMPETITION)}/standings`
-    );
-    url.searchParams.set('season', '2026');
-
-    const payload = footballDataStandingsSchema.parse(await this.getJson(url));
-
-    return payload.standings
-      .filter((standing) => !standing.type || standing.type === 'TOTAL')
-      .flatMap((standing) =>
-        standing.table.map((row) => ({
-          teamName: footballDataTeamName(row.team),
-          group: standing.group
-            ? formatFootballDataLabel(standing.group)
-            : 'Group',
-          rank: row.position,
-          points: row.points ?? 0,
-          played: row.playedGames ?? 0,
-          wins: row.won ?? 0,
-          draws: row.draw ?? 0,
-          losses: row.lost ?? 0,
-          goalDifference: row.goalDifference ?? 0
-        }))
-      );
   }
 
   private url(pathname: string): URL {
@@ -481,7 +429,20 @@ function mapFootballDataMatch(
 function footballDataTeamName(
   team: z.infer<typeof footballDataTeamSchema>
 ): string {
-  return team.name ?? team.shortName ?? team.tla ?? 'TBD';
+  const byCode = team.tla
+    ? nations.find((nation) => nation.code === team.tla)
+    : null;
+
+  if (byCode) {
+    return byCode.name;
+  }
+
+  const rawName = team.name ?? team.shortName ?? team.tla ?? 'TBD';
+  const byName = nations.find(
+    (nation) => normalizeTeamName(nation.name) === normalizeTeamName(rawName)
+  );
+
+  return byName?.name ?? rawName;
 }
 
 function getFootballDataGoals(
@@ -544,6 +505,112 @@ function mapFootballDataStatus(status: string): Match['status'] {
   }
 
   return 'scheduled';
+}
+
+interface DerivedStanding {
+  teamName: string;
+  group: string;
+  points: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalDifference: number;
+  goalsFor: number;
+}
+
+function deriveGroupStandings(matches: Match[]): GroupStanding[] {
+  const standings = new Map<string, DerivedStanding>();
+
+  for (const nation of nations) {
+    standings.set(normalizeTeamName(nation.name), {
+      teamName: nation.name,
+      group: nation.group,
+      points: 0,
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      goalDifference: 0,
+      goalsFor: 0
+    });
+  }
+
+  for (const match of matches) {
+    if (
+      match.status !== 'finished' ||
+      !match.round.startsWith('Group ') ||
+      match.homeGoals === null ||
+      match.awayGoals === null
+    ) {
+      continue;
+    }
+
+    const home = standings.get(normalizeTeamName(match.homeTeam));
+    const away = standings.get(normalizeTeamName(match.awayTeam));
+
+    if (!home || !away || home.group !== away.group) {
+      continue;
+    }
+
+    applyGroupResult(home, match.homeGoals, match.awayGoals);
+    applyGroupResult(away, match.awayGoals, match.homeGoals);
+  }
+
+  const byGroup = new Map<string, DerivedStanding[]>();
+
+  for (const standing of standings.values()) {
+    byGroup.set(standing.group, [
+      ...(byGroup.get(standing.group) ?? []),
+      standing
+    ]);
+  }
+
+  return [...byGroup.entries()].flatMap(([group, groupStandings]) =>
+    groupStandings
+      .sort(
+        (left, right) =>
+          right.points - left.points ||
+          right.goalDifference - left.goalDifference ||
+          right.goalsFor - left.goalsFor ||
+          left.teamName.localeCompare(right.teamName)
+      )
+      .map((standing, index) => ({
+        teamName: standing.teamName,
+        group,
+        rank: index + 1,
+        points: standing.points,
+        played: standing.played,
+        wins: standing.wins,
+        draws: standing.draws,
+        losses: standing.losses,
+        goalDifference: standing.goalDifference
+      }))
+  );
+}
+
+function applyGroupResult(
+  standing: DerivedStanding,
+  goalsFor: number,
+  goalsAgainst: number
+): void {
+  standing.played += 1;
+  standing.goalDifference += goalsFor - goalsAgainst;
+  standing.goalsFor += goalsFor;
+
+  if (goalsFor > goalsAgainst) {
+    standing.wins += 1;
+    standing.points += 3;
+    return;
+  }
+
+  if (goalsFor < goalsAgainst) {
+    standing.losses += 1;
+    return;
+  }
+
+  standing.draws += 1;
+  standing.points += 1;
 }
 
 class OpenFootballProvider implements WorldCupProvider {

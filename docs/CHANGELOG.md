@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.9.1 - 2026-06-12
+
+- Canonicalized football-data.org team names using team codes so provider names like `United States`, `Congo DR`, and `Curaçao` match app allocations.
+- Derived football-data.org group standings from finished group matches and local group metadata because the API returns a single combined World Cup standings table.
+
 ## 0.9.0 - 2026-06-12
 
 - Added `RESULTS_PROVIDER=football-data` using football-data.org World Cup matches, standings, and match-specific refreshes.
