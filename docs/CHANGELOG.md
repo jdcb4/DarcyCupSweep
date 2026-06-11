@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.8.5 - 2026-06-11
+
+- Added a dark Darcy Cup favicon with trophy and football styling across dashboard, matches, and admin pages.
+
 ## 0.8.4 - 2026-06-10
 
 - Made team ownership matching accent-insensitive so provider names like `Curaçao` match stored allocations like `Curacao` without changing existing saved sweep data.

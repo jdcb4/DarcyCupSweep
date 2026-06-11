@@ -38,7 +38,9 @@ export function renderDashboard(
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
     <title>World Cup Sweep Tracker</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
@@ -193,7 +195,9 @@ export function renderMatchesPage(apiPath = '/api/sweep'): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
     <title>Upcoming Matches | World Cup Sweep Tracker</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
@@ -276,7 +280,9 @@ export function renderAdminPage(
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
     <title>Admin | World Cup Sweep Tracker</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
