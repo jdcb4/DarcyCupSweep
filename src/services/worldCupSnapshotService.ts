@@ -1,7 +1,11 @@
 import type { Match, WorldCupSnapshot } from '../domain/sweep.js';
 import type { WorldCupProvider } from './worldCupProvider.js';
 
-export type ResultsProviderName = 'mock' | 'api-football' | 'openfootball';
+export type ResultsProviderName =
+  | 'football-data'
+  | 'mock'
+  | 'api-football'
+  | 'openfootball';
 
 export interface PollDecision {
   intervalMs: number;
@@ -71,7 +75,11 @@ export class WorldCupSnapshotService {
       return;
     }
 
-    const decision = getPollingDecision(this.providerName, this.snapshot, this.now());
+    const decision = getPollingDecision(
+      this.providerName,
+      this.snapshot,
+      this.now()
+    );
 
     this.timer = setTimeout(() => {
       void this.refresh(decision.mode)
@@ -96,9 +104,18 @@ export class WorldCupSnapshotService {
     return this.refreshPromise;
   }
 
-  private async refreshSnapshot(mode: PollDecision['mode']): Promise<WorldCupSnapshot> {
-    if (mode === 'relevant' && this.snapshot && this.provider.refreshRelevantSnapshot) {
-      this.snapshot = await this.provider.refreshRelevantSnapshot(this.snapshot, this.now());
+  private async refreshSnapshot(
+    mode: PollDecision['mode']
+  ): Promise<WorldCupSnapshot> {
+    if (
+      mode === 'relevant' &&
+      this.snapshot &&
+      this.provider.refreshRelevantSnapshot
+    ) {
+      this.snapshot = await this.provider.refreshRelevantSnapshot(
+        this.snapshot,
+        this.now()
+      );
       return this.snapshot;
     }
 
@@ -107,7 +124,11 @@ export class WorldCupSnapshotService {
   }
 }
 
-export function getPollingDecision(providerName: ResultsProviderName, snapshot: WorldCupSnapshot | null, now: Date): PollDecision {
+export function getPollingDecision(
+  providerName: ResultsProviderName,
+  snapshot: WorldCupSnapshot | null,
+  now: Date
+): PollDecision {
   if (providerName === 'openfootball') {
     return isWithinOpenFootballPostMatchWindow(snapshot?.matches ?? [], now)
       ? {
@@ -122,17 +143,17 @@ export function getPollingDecision(providerName: ResultsProviderName, snapshot: 
         };
   }
 
-  if (providerName === 'api-football') {
+  if (providerName === 'api-football' || providerName === 'football-data') {
     return isWithinApiFootballMatchWindow(snapshot?.matches ?? [], now)
       ? {
           intervalMs: tenMinutesMs,
           mode: 'relevant',
-          reason: 'within API-Football match window'
+          reason: `within ${providerName} match window`
         }
       : {
           intervalMs: oneHourMs,
           mode: 'full',
-          reason: 'outside API-Football match window'
+          reason: `outside ${providerName} match window`
         };
   }
 
@@ -143,11 +164,15 @@ export function getPollingDecision(providerName: ResultsProviderName, snapshot: 
   };
 }
 
-function isWithinOpenFootballPostMatchWindow(matches: Match[], now: Date): boolean {
+function isWithinOpenFootballPostMatchWindow(
+  matches: Match[],
+  now: Date
+): boolean {
   const nowMs = now.getTime();
 
   return matches.some((match) => {
-    const nominalEnd = new Date(match.utcDate).getTime() + nominalMatchDurationMs;
+    const nominalEnd =
+      new Date(match.utcDate).getTime() + nominalMatchDurationMs;
     return nowMs >= nominalEnd && nowMs <= nominalEnd + postMatchWindowMs;
   });
 }
@@ -157,10 +182,15 @@ function isWithinApiFootballMatchWindow(matches: Match[], now: Date): boolean {
 
   return matches.some((match) => {
     const kickoff = new Date(match.utcDate).getTime();
-    return nowMs >= kickoff - apiFootballWindowBeforeMs && nowMs <= kickoff + apiFootballWindowAfterMs;
+    return (
+      nowMs >= kickoff - apiFootballWindowBeforeMs &&
+      nowMs <= kickoff + apiFootballWindowAfterMs
+    );
   });
 }
 
 function formatPollingError(error: unknown): string {
-  return error instanceof Error ? `World Cup provider polling failed: ${error.message}` : 'World Cup provider polling failed.';
+  return error instanceof Error
+    ? `World Cup provider polling failed: ${error.message}`
+    : 'World Cup provider polling failed.';
 }

@@ -8,7 +8,7 @@ A Hono website for tracking a 2026 Football World Cup sweep with 16 participants
 - Package manager: pnpm.
 - Persistence: Postgres when `DATABASE_URL` is set; local JSON fallback in `src/data/sweep.json`.
 - Deployment target: Railway via GitHub.
-- Results provider: mock by default; API-FOOTBALL can be enabled with environment variables.
+- Results provider: football-data.org by default; OpenFootball, API-FOOTBALL, and mock providers remain selectable.
 
 ## Quick Start
 
@@ -56,13 +56,28 @@ These routes preview allocated sweep states without writing to Postgres or `src/
 
 ## Results Providers
 
-Local development runs with `RESULTS_PROVIDER=mock` so no API key is required.
+Local development uses `RESULTS_PROVIDER=football-data` by default. Set `FOOTBALL_DATA_KEY` in `.env` for the free football-data.org World Cup feed.
 
 Provider options:
 
+- `football-data` - football-data.org World Cup data using `FOOTBALL_DATA_KEY`; default provider for fresher free match data.
 - `mock` - built-in placeholder data.
 - `openfootball` - public-domain World Cup fixture and post-game result data from `openfootball/worldcup`; useful for schedules, countdowns, and final scores once upstream updates.
 - `api-football` - API-FOOTBALL integration for paid near-real-time data.
+
+To use the default football-data.org provider:
+
+```env
+# In .env, which is ignored by git:
+RESULTS_PROVIDER=football-data
+FOOTBALL_DATA_KEY=<set locally, do not commit>
+```
+
+To run without any provider key:
+
+```env
+RESULTS_PROVIDER=mock
+```
 
 To enable OpenFootball:
 

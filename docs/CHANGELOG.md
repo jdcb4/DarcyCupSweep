@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.9.0 - 2026-06-12
+
+- Added `RESULTS_PROVIDER=football-data` using football-data.org World Cup matches, standings, and match-specific refreshes.
+- Made football-data.org the default results provider via `FOOTBALL_DATA_KEY`.
+- Documented football-data.org local and Railway configuration while retaining mock, OpenFootball, and API-FOOTBALL provider options.
+
 ## 0.8.5 - 2026-06-11
 
 - Added a dark Darcy Cup favicon with trophy and football styling across dashboard, matches, and admin pages.

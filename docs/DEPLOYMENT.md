@@ -23,15 +23,18 @@ Railway runs the migration script and then starts the app. The app listens on `P
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `PORT` | Railway provides | Server port. |
-| `RESULTS_PROVIDER` | No | `mock` by default, or `openfootball` / `api-football`. |
-| `ADMIN_PASSWORD` | Yes for `/admin` | Password for HTTP Basic authentication on `/admin`. |
-| `DATABASE_URL` | Yes for Railway persistence | Railway Postgres connection string. Enables durable admin allocation writes. |
-| `API_FOOTBALL_KEY` | Only for API-FOOTBALL | API-FOOTBALL key. Store as a Railway secret, never in git. |
-| `API_FOOTBALL_BASE_URL` | No | Defaults to `https://v3.football.api-sports.io`. |
-| `OPENFOOTBALL_BASE_URL` | No | Defaults to `https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa`. |
+| Variable                    | Required                    | Purpose                                                                                 |
+| --------------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| `PORT`                      | Railway provides            | Server port.                                                                            |
+| `RESULTS_PROVIDER`          | No                          | `football-data` by default, or `mock` / `openfootball` / `api-football`.                |
+| `ADMIN_PASSWORD`            | Yes for `/admin`            | Password for HTTP Basic authentication on `/admin`.                                     |
+| `DATABASE_URL`              | Yes for Railway persistence | Railway Postgres connection string. Enables durable admin allocation writes.            |
+| `FOOTBALL_DATA_KEY`         | Yes for default provider    | football-data.org API token. Store as a Railway secret, never in git.                   |
+| `FOOTBALL_DATA_BASE_URL`    | No                          | Defaults to `https://api.football-data.org/v4`.                                         |
+| `FOOTBALL_DATA_COMPETITION` | No                          | Defaults to `WC`.                                                                       |
+| `API_FOOTBALL_KEY`          | Only for API-FOOTBALL       | API-FOOTBALL key. Store as a Railway secret, never in git.                              |
+| `API_FOOTBALL_BASE_URL`     | No                          | Defaults to `https://v3.football.api-sports.io`.                                        |
+| `OPENFOOTBALL_BASE_URL`     | No                          | Defaults to `https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa`. |
 
 ## Deploy Flow
 
@@ -39,7 +42,7 @@ Railway runs the migration script and then starts the app. The app listens on `P
 2. Connect the repository in Railway.
 3. Attach a Railway Postgres database so `DATABASE_URL` is available to the app service.
 4. Set `ADMIN_PASSWORD`.
-5. Set `RESULTS_PROVIDER=openfootball` for public fixture data, or `RESULTS_PROVIDER=api-football` and `API_FOOTBALL_KEY` if paid live data is required.
+5. Set `FOOTBALL_DATA_KEY` for the default `RESULTS_PROVIDER=football-data`, or choose `RESULTS_PROVIDER=openfootball` / `RESULTS_PROVIDER=api-football` with its matching credentials.
 6. Railway builds with Nixpacks and starts `pnpm run start:railway`.
 
 ## Verification Before Deploy

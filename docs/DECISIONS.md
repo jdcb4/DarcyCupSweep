@@ -141,3 +141,13 @@ Durable architecture and tooling decisions. Use ADR-lite format: each entry is d
 **Rejected alternatives:** Computing tracking directly in browser JavaScript was rejected because it would duplicate tournament rules and be harder to test. Storing derived status in the database was rejected because provider snapshots can change and the values are cheap to recompute.
 
 **Supersedes:** N/A
+
+## 2026-06-12: football-data.org as default World Cup provider
+
+**Decision:** Add `RESULTS_PROVIDER=football-data` backed by football-data.org and make it the default provider.
+
+**Reasoning:** The user has provisioned `FOOTBALL_DATA_KEY` locally and in Railway, and football-data.org lists Worldcup in its free tier. Its match API supports live-ish match statuses and single-match refreshes, which should provide fresher data than the OpenFootball text files while avoiding API-FOOTBALL paid access for now.
+
+**Rejected alternatives:** Keeping OpenFootball as the default was rejected because it updates post-game and may lag. Replacing API-FOOTBALL entirely was rejected because it remains a possible paid near-real-time provider.
+
+**Supersedes:** 2026-06-05: API-FOOTBALL as primary live-results provider

@@ -23,7 +23,11 @@ const snapshot: WorldCupSnapshot = {
 
 describe('World Cup polling schedule', () => {
   it('polls OpenFootball every five minutes for the hour after nominal match end', () => {
-    const decision = getPollingDecision('openfootball', snapshot, new Date('2026-06-11T12:30:00.000Z'));
+    const decision = getPollingDecision(
+      'openfootball',
+      snapshot,
+      new Date('2026-06-11T12:30:00.000Z')
+    );
 
     expect(decision).toMatchObject({
       intervalMs: 5 * 60 * 1000,
@@ -32,7 +36,11 @@ describe('World Cup polling schedule', () => {
   });
 
   it('polls OpenFootball hourly outside the post-match window', () => {
-    const decision = getPollingDecision('openfootball', snapshot, new Date('2026-06-11T13:01:00.000Z'));
+    const decision = getPollingDecision(
+      'openfootball',
+      snapshot,
+      new Date('2026-06-11T13:01:00.000Z')
+    );
 
     expect(decision).toMatchObject({
       intervalMs: 60 * 60 * 1000,
@@ -41,7 +49,24 @@ describe('World Cup polling schedule', () => {
   });
 
   it('polls API-Football relevant fixtures every ten minutes around match windows', () => {
-    const decision = getPollingDecision('api-football', snapshot, new Date('2026-06-11T09:50:00.000Z'));
+    const decision = getPollingDecision(
+      'api-football',
+      snapshot,
+      new Date('2026-06-11T09:50:00.000Z')
+    );
+
+    expect(decision).toMatchObject({
+      intervalMs: 10 * 60 * 1000,
+      mode: 'relevant'
+    });
+  });
+
+  it('polls football-data relevant fixtures every ten minutes around match windows', () => {
+    const decision = getPollingDecision(
+      'football-data',
+      snapshot,
+      new Date('2026-06-11T09:50:00.000Z')
+    );
 
     expect(decision).toMatchObject({
       intervalMs: 10 * 60 * 1000,
@@ -50,7 +75,11 @@ describe('World Cup polling schedule', () => {
   });
 
   it('does a full API-Football refresh hourly outside match windows', () => {
-    const decision = getPollingDecision('api-football', snapshot, new Date('2026-06-11T14:01:00.000Z'));
+    const decision = getPollingDecision(
+      'api-football',
+      snapshot,
+      new Date('2026-06-11T14:01:00.000Z')
+    );
 
     expect(decision).toMatchObject({
       intervalMs: 60 * 60 * 1000,

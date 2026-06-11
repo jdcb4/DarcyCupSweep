@@ -10,7 +10,7 @@ This document describes the project's runtime shape and module boundaries.
 - Deployment target: Railway from GitHub.
 - Persistence model: Postgres JSONB app state when `DATABASE_URL` is set; local JSON fallback in `src/data/sweep.json`.
 - Admin: `/admin` is protected by HTTP Basic authentication using `ADMIN_PASSWORD`.
-- External data boundary: World Cup results are loaded through `src/services/worldCupProvider.ts`. Mock data is the default; OpenFootball can be enabled for public-domain fixtures and post-game results, and API-FOOTBALL can be enabled for paid near-real-time results.
+- External data boundary: World Cup results are loaded through `src/services/worldCupProvider.ts`. football-data.org is the default free provider; mock, OpenFootball, and API-FOOTBALL remain selectable alternatives.
 - Results cache: `src/services/worldCupSnapshotService.ts` keeps a cached snapshot and runs provider-specific server-side polling when the server starts.
 
 ## Module boundaries
@@ -49,13 +49,14 @@ Environment variables, local JSON, and third-party API responses are validated w
 
 ## Configuration
 
-Environment variables flow through `src/config/env.ts`, which loads local `.env` values before Zod validation. `RESULTS_PROVIDER=mock` is the local default. Supported providers are `mock`, `openfootball`, and `api-football`. `RESULTS_PROVIDER=api-football` requires `API_FOOTBALL_KEY`. `DATABASE_URL` enables Postgres persistence. `/admin` requires `ADMIN_PASSWORD`.
+Environment variables flow through `src/config/env.ts`, which loads local `.env` values before Zod validation. `RESULTS_PROVIDER=football-data` is the default. Supported providers are `football-data`, `mock`, `openfootball`, and `api-football`. `RESULTS_PROVIDER=football-data` requires `FOOTBALL_DATA_KEY`; `RESULTS_PROVIDER=api-football` requires `API_FOOTBALL_KEY`. `DATABASE_URL` enables Postgres persistence. `/admin` requires `ADMIN_PASSWORD`.
 
 ## Results polling
 
 Public API routes read from `WorldCupSnapshotService` rather than directly polling the provider on every page load. On a direct server run, the service starts a background polling loop and serves the latest cached snapshot.
 
 - OpenFootball: full snapshot refresh every hour, or every five minutes during the hour after a match's nominal end time. Nominal end is kickoff plus two hours.
+- football-data.org: full snapshot refresh every hour outside match windows. Around match windows, it refreshes only relevant match IDs every ten minutes. The match window is 15 minutes before kickoff through three hours after kickoff.
 - API-Football: full snapshot refresh every hour outside match windows. Around match windows, it refreshes only relevant fixture IDs every ten minutes. The match window is 15 minutes before kickoff through three hours after kickoff.
 - Mock: hourly refresh.
 
