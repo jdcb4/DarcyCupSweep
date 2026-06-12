@@ -55,6 +55,17 @@ const snapshot: WorldCupSnapshot = {
       goalDifference: 5
     },
     {
+      teamName: 'Canada',
+      group: 'Group A',
+      rank: 2,
+      points: 0,
+      played: 1,
+      wins: 0,
+      draws: 0,
+      losses: 1,
+      goalDifference: -5
+    },
+    {
       teamName: 'Argentina',
       group: 'Group B',
       rank: 1,
@@ -64,9 +75,42 @@ const snapshot: WorldCupSnapshot = {
       draws: 1,
       losses: 0,
       goalDifference: 4
+    },
+    {
+      teamName: 'Japan',
+      group: 'Group B',
+      rank: 2,
+      points: 1,
+      played: 1,
+      wins: 0,
+      draws: 1,
+      losses: 0,
+      goalDifference: 0
     }
   ],
   matches: [
+    {
+      id: 'group-a',
+      utcDate: '2026-06-20T00:00:00.000Z',
+      round: 'Group A',
+      status: 'finished',
+      homeTeam: 'Brazil',
+      awayTeam: 'Canada',
+      homeGoals: 5,
+      awayGoals: 0,
+      winnerTeam: 'Brazil'
+    },
+    {
+      id: 'group-b',
+      utcDate: '2026-06-21T00:00:00.000Z',
+      round: 'Group B',
+      status: 'finished',
+      homeTeam: 'Argentina',
+      awayTeam: 'Japan',
+      homeGoals: 1,
+      awayGoals: 1,
+      winnerTeam: null
+    },
     {
       id: 'final',
       utcDate: '2026-07-19T22:00:00.000Z',
@@ -97,6 +141,76 @@ describe('sweep domain', () => {
       participantName: 'Joe',
       prizeUsd: 250
     });
+  });
+
+  it('does not allocate group-winner prizes until a group is complete', () => {
+    const leaderboard = calculateLeaderboard(
+      {
+        ...sweep,
+        participants: sweep.participants.map((participant) =>
+          participant.name === 'George'
+            ? { ...participant, teams: ['Australia'] }
+            : participant
+        )
+      },
+      {
+        source: 'test',
+        updatedAt: '2026-06-12T00:00:00.000Z',
+        standings: [
+          {
+            teamName: 'Australia',
+            group: 'Group D',
+            rank: 1,
+            points: 3,
+            played: 1,
+            wins: 1,
+            draws: 0,
+            losses: 0,
+            goalDifference: 2
+          },
+          {
+            teamName: 'USA',
+            group: 'Group D',
+            rank: 2,
+            points: 0,
+            played: 1,
+            wins: 0,
+            draws: 0,
+            losses: 1,
+            goalDifference: -2
+          },
+          {
+            teamName: 'Paraguay',
+            group: 'Group D',
+            rank: 3,
+            points: 0,
+            played: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            goalDifference: 0
+          }
+        ],
+        matches: [
+          {
+            id: 'early-group-d',
+            utcDate: '2026-06-12T00:00:00.000Z',
+            round: 'Group D',
+            status: 'finished',
+            homeTeam: 'Australia',
+            awayTeam: 'USA',
+            homeGoals: 2,
+            awayGoals: 0,
+            winnerTeam: 'Australia'
+          }
+        ]
+      }
+    );
+
+    expect(
+      leaderboard.find((standing) => standing.participantName === 'George')
+        ?.prizeUsd
+    ).toBe(0);
   });
 
   it('requires exactly three unique teams per participant before activation', () => {

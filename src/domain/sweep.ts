@@ -87,13 +87,11 @@ export function calculatePrizeEvents(
   sweep: Sweep,
   snapshot: WorldCupSnapshot
 ): PrizeEvent[] {
-  const groupWinners = snapshot.standings
-    .filter((standing) => standing.rank === 1)
-    .map((standing) => ({
-      teamName: standing.teamName,
-      label: 'Group winner' as const,
-      amountUsd: sweep.prizesUsd.groupWinner
-    }));
+  const groupWinners = getConcludedGroupWinners(snapshot).map((standing) => ({
+    teamName: standing.teamName,
+    label: 'Group winner' as const,
+    amountUsd: sweep.prizesUsd.groupWinner
+  }));
 
   const final = snapshot.matches.find(
     (match) =>
@@ -122,6 +120,50 @@ export function calculatePrizeEvents(
       amountUsd: sweep.prizesUsd.runnerUp
     }
   ];
+}
+
+function getConcludedGroupWinners(snapshot: WorldCupSnapshot): GroupStanding[] {
+  const standingsByGroup = new Map<string, GroupStanding[]>();
+
+  for (const standing of snapshot.standings) {
+    standingsByGroup.set(standing.group, [
+      ...(standingsByGroup.get(standing.group) ?? []),
+      standing
+    ]);
+  }
+
+  return [...standingsByGroup.entries()].flatMap(([group, standings]) => {
+    if (!isGroupComplete(group, standings, snapshot.matches)) {
+      return [];
+    }
+
+    return standings.filter((standing) => standing.rank === 1);
+  });
+}
+
+function isGroupComplete(
+  group: string,
+  standings: GroupStanding[],
+  matches: Match[]
+): boolean {
+  const groupTeams = new Set(
+    standings.map((standing) => normalizeTeamName(standing.teamName))
+  );
+
+  if (groupTeams.size < 2) {
+    return false;
+  }
+
+  const expectedMatches = (groupTeams.size * (groupTeams.size - 1)) / 2;
+  const finishedGroupMatches = matches.filter(
+    (match) =>
+      normalizeTeamName(match.round) === normalizeTeamName(group) &&
+      match.status === 'finished' &&
+      groupTeams.has(normalizeTeamName(match.homeTeam)) &&
+      groupTeams.has(normalizeTeamName(match.awayTeam))
+  );
+
+  return finishedGroupMatches.length >= expectedMatches;
 }
 
 export function calculateLeaderboard(

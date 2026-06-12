@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.9.3 - 2026-06-12
+
+- Fixed group-winner prize calculation so `$50` group prizes are only awarded after the relevant group is complete.
+
 ## 0.9.2 - 2026-06-12
 
 - Added a protected `/admin/refresh-results` action for manually refreshing the cached World Cup provider snapshot.
