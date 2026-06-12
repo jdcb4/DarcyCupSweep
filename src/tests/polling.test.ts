@@ -64,16 +64,29 @@ describe('World Cup polling schedule', () => {
     });
   });
 
-  it('polls football-data relevant fixtures every ten minutes around match windows', () => {
+  it('polls football-data relevant fixtures every minute during likely result windows', () => {
     const decision = getPollingDecision(
       'football-data',
       snapshot,
-      new Date('2026-06-11T09:50:00.000Z')
+      new Date('2026-06-11T11:30:00.000Z')
+    );
+
+    expect(decision).toMatchObject({
+      intervalMs: 60 * 1000,
+      mode: 'relevant'
+    });
+  });
+
+  it('does a full football-data refresh every ten minutes outside likely result windows', () => {
+    const decision = getPollingDecision(
+      'football-data',
+      snapshot,
+      new Date('2026-06-11T11:00:00.000Z')
     );
 
     expect(decision).toMatchObject({
       intervalMs: 10 * 60 * 1000,
-      mode: 'relevant'
+      mode: 'full'
     });
   });
 

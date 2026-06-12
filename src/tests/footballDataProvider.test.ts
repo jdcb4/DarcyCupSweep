@@ -84,7 +84,7 @@ describe('Football-Data provider', () => {
     });
   });
 
-  it('refreshes relevant football-data matches by id during match windows', async () => {
+  it('refreshes relevant football-data matches by id during likely result windows', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
 
@@ -141,7 +141,7 @@ describe('Football-Data provider', () => {
 
     const refreshed = await provider.refreshRelevantSnapshot?.(
       snapshot,
-      new Date('2026-06-18T20:00:00.000Z')
+      new Date('2026-06-18T20:30:00.000Z')
     );
 
     expect(refreshed?.matches[0]).toMatchObject({
@@ -149,6 +149,14 @@ describe('Football-Data provider', () => {
       homeGoals: 1,
       awayGoals: 2,
       winnerTeam: 'Curacao'
+    });
+    expect(
+      refreshed?.standings.find((standing) => standing.teamName === 'Curacao')
+    ).toMatchObject({
+      group: 'Group E',
+      rank: 1,
+      points: 3,
+      played: 1
     });
   });
 });

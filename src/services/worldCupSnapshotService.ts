@@ -19,6 +19,8 @@ const tenMinutesMs = 10 * oneMinuteMs;
 const oneHourMs = 60 * oneMinuteMs;
 const nominalMatchDurationMs = 2 * oneHourMs;
 const postMatchWindowMs = oneHourMs;
+const footballDataFinishWindowStartMs = 85 * oneMinuteMs;
+const footballDataFinishWindowEndMs = 110 * oneMinuteMs;
 const apiFootballWindowBeforeMs = 15 * oneMinuteMs;
 const apiFootballWindowAfterMs = 3 * oneHourMs;
 
@@ -147,7 +149,21 @@ export function getPollingDecision(
         };
   }
 
-  if (providerName === 'api-football' || providerName === 'football-data') {
+  if (providerName === 'football-data') {
+    return isWithinFootballDataFinishWindow(snapshot?.matches ?? [], now)
+      ? {
+          intervalMs: oneMinuteMs,
+          mode: 'relevant',
+          reason: 'within football-data likely result window'
+        }
+      : {
+          intervalMs: tenMinutesMs,
+          mode: 'full',
+          reason: 'outside football-data likely result window'
+        };
+  }
+
+  if (providerName === 'api-football') {
     return isWithinApiFootballMatchWindow(snapshot?.matches ?? [], now)
       ? {
           intervalMs: tenMinutesMs,
@@ -178,6 +194,21 @@ function isWithinOpenFootballPostMatchWindow(
     const nominalEnd =
       new Date(match.utcDate).getTime() + nominalMatchDurationMs;
     return nowMs >= nominalEnd && nowMs <= nominalEnd + postMatchWindowMs;
+  });
+}
+
+function isWithinFootballDataFinishWindow(
+  matches: Match[],
+  now: Date
+): boolean {
+  const nowMs = now.getTime();
+
+  return matches.some((match) => {
+    const kickoff = new Date(match.utcDate).getTime();
+    return (
+      nowMs >= kickoff + footballDataFinishWindowStartMs &&
+      nowMs <= kickoff + footballDataFinishWindowEndMs
+    );
   });
 }
 

@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.9.4 - 2026-06-13
+
+- Increased football-data.org polling to ten-minute full refreshes, with one-minute match-specific refreshes from 85 to 110 minutes after kickoff.
+- Recalculate football-data.org group standings after match-specific refreshes so result-window polls update derived sweep state immediately.
+
 ## 0.9.3 - 2026-06-12
 
 - Fixed group-winner prize calculation so `$50` group prizes are only awarded after the relevant group is complete.

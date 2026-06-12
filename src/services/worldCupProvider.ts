@@ -183,7 +183,7 @@ class FootballDataProvider implements WorldCupProvider {
     snapshot: WorldCupSnapshot,
     now = new Date()
   ): Promise<WorldCupSnapshot> {
-    const relevantMatches = getMatchWindowRelevantMatches(
+    const relevantMatches = getFootballDataFinishWindowMatches(
       snapshot.matches,
       now
     );
@@ -198,14 +198,16 @@ class FootballDataProvider implements WorldCupProvider {
     const refreshedById = new Map(
       refreshedMatches.map((match) => [match.id, match])
     );
+    const matches = snapshot.matches.map(
+      (match) => refreshedById.get(match.id) ?? match
+    );
 
     return worldCupSnapshotSchema.parse({
       ...snapshot,
       source: 'football-data',
       updatedAt: new Date().toISOString(),
-      matches: snapshot.matches.map(
-        (match) => refreshedById.get(match.id) ?? match
-      )
+      matches,
+      standings: deriveGroupStandings(matches)
     });
   }
 
@@ -482,6 +484,25 @@ function formatFootballDataLabel(value: string): string {
 
 function getApiFootballRelevantMatches(matches: Match[], now: Date): Match[] {
   return getMatchWindowRelevantMatches(matches, now);
+}
+
+const oneMinuteMs = 60 * 1000;
+const footballDataFinishWindowStartMs = 85 * oneMinuteMs;
+const footballDataFinishWindowEndMs = 110 * oneMinuteMs;
+
+function getFootballDataFinishWindowMatches(
+  matches: Match[],
+  now: Date
+): Match[] {
+  const nowMs = now.getTime();
+
+  return matches.filter((match) => {
+    const kickoff = new Date(match.utcDate).getTime();
+    return (
+      nowMs >= kickoff + footballDataFinishWindowStartMs &&
+      nowMs <= kickoff + footballDataFinishWindowEndMs
+    );
+  });
 }
 
 function getMatchWindowRelevantMatches(matches: Match[], now: Date): Match[] {
