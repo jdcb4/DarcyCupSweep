@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.10.1 - 2026-06-13
+
+- Added versioned static asset URLs so browsers and CDN caches fetch the current schedule script after deploys.
+
 ## 0.10.0 - 2026-06-13
 
 - Renamed the public schedule page to "All upcoming matches" and updated navigation to match.

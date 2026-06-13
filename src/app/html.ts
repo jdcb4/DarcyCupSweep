@@ -4,6 +4,8 @@ import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
+const assetVersion = '0.10.1';
+
 export interface DashboardRenderOptions {
   apiPath?: string;
   notice?: string;
@@ -40,8 +42,8 @@ export function renderDashboard(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
     <title>World Cup Sweep Tracker</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
   </head>
   <body>
     <main class="app-shell" data-api-path="${escapeHtml(options.apiPath ?? '/api/sweep')}">
@@ -168,7 +170,7 @@ export function renderDashboard(
         </aside>
       </section>
     </main>
-    <script src="/assets/app.js" type="module"></script>
+    <script src="${assetPath('/assets/app.js')}" type="module"></script>
   </body>
 </html>`;
 }
@@ -239,8 +241,8 @@ function renderSchedulePage(options: SchedulePageOptions): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
     <title>${escapeHtml(options.title)}</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
   </head>
   <body>
     <main class="app-shell schedule-shell" data-api-path="${escapeHtml(options.apiPath)}" data-schedule-mode="${options.scriptMode}">
@@ -261,7 +263,7 @@ function renderSchedulePage(options: SchedulePageOptions): string {
         </div>
       </section>
     </main>
-    <script src="/assets/matches.js" type="module"></script>
+    <script src="${assetPath('/assets/matches.js')}" type="module"></script>
   </body>
 </html>`;
 }
@@ -325,8 +327,8 @@ export function renderAdminPage(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
     <title>Admin | World Cup Sweep Tracker</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
   </head>
   <body>
     <main class="app-shell admin-shell">
@@ -371,7 +373,7 @@ export function renderAdminPage(
         </form>
       </section>
     </main>
-    <script src="/assets/admin.js" type="module"></script>
+    <script src="${assetPath('/assets/admin.js')}" type="module"></script>
   </body>
 </html>`;
 }
@@ -413,6 +415,10 @@ function renderStatusChip(nation: Nation): string {
 
 function renderFlagImage(nation: Nation): string {
   return `<img class="flag-img" src="${escapeHtml(nation.flagImageUrl)}" width="40" height="30" alt="${escapeHtml(`${nation.name} flag`)}" loading="lazy" />`;
+}
+
+function assetPath(path: string): string {
+  return `${path}?v=${assetVersion}`;
 }
 
 export function escapeHtml(value: string): string {
