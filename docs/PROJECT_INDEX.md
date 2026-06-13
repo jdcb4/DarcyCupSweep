@@ -29,17 +29,17 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm run dev` | Start the development server. |
-| `pnpm run db:migrate` | Create and seed the Postgres app state table when `DATABASE_URL` is set. |
-| `pnpm run typecheck` | TypeScript checking. |
-| `pnpm run lint` | ESLint. |
-| `pnpm test` | Vitest once. |
-| `pnpm run test:watch` | Vitest in watch mode. |
-| `pnpm run build` | Production build. |
-| `pnpm run start:railway` | Run database migration, then start the production server. |
-| `pnpm run verify` | Typecheck + lint + test + build. |
+| Command                  | Purpose                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `pnpm run dev`           | Start the development server.                                            |
+| `pnpm run db:migrate`    | Create and seed the Postgres app state table when `DATABASE_URL` is set. |
+| `pnpm run typecheck`     | TypeScript checking.                                                     |
+| `pnpm run lint`          | ESLint.                                                                  |
+| `pnpm test`              | Vitest once.                                                             |
+| `pnpm run test:watch`    | Vitest in watch mode.                                                    |
+| `pnpm run build`         | Production build.                                                        |
+| `pnpm run start:railway` | Run database migration, then start the production server.                |
+| `pnpm run verify`        | Typecheck + lint + test + build.                                         |
 
 ## Demo routes
 
@@ -50,6 +50,7 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 
 - `/` - sweep dashboard.
 - `/matches` - all upcoming matches with Australian Eastern kickoff times.
+- `/finalised-matches` - all finalised matches with final scores and sweep ownership.
 
 ## Key docs
 

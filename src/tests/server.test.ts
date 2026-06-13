@@ -27,6 +27,7 @@ describe('server', () => {
     expect(await allocatedPage.text()).toContain('/api/demo/allocated');
     expect(resultsApi.status).toBe(200);
     expect(payload.tracking.allUpcomingMatches).toHaveLength(4);
+    expect(payload.tracking.allFinalisedMatches).toHaveLength(12);
     expect(payload.tracking.upcomingMatches).toHaveLength(4);
     expect(payload.tracking.recentResults).toHaveLength(4);
     expect(
@@ -39,8 +40,20 @@ describe('server', () => {
     const html = await response.text();
 
     expect(response.status).toBe(200);
-    expect(html).toContain('Upcoming Matches | World Cup Sweep Tracker');
+    expect(html).toContain('All Upcoming Matches | World Cup Sweep Tracker');
+    expect(html).toContain('All upcoming matches');
     expect(html).toContain('Australian Eastern time');
+    expect(html).toContain('/assets/matches.js');
+  });
+
+  it('renders the all finalised matches page', async () => {
+    const response = await app.request('/finalised-matches');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain('All Finalised Matches | World Cup Sweep Tracker');
+    expect(html).toContain('All finalised matches');
+    expect(html).toContain('data-schedule-mode="finalised"');
     expect(html).toContain('/assets/matches.js');
   });
 

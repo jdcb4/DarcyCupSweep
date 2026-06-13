@@ -190,32 +190,74 @@ function renderDrawCountdown(): string {
 }
 
 export function renderMatchesPage(apiPath = '/api/sweep'): string {
+  return renderSchedulePage({
+    active: 'upcoming',
+    apiPath,
+    title: 'All Upcoming Matches | World Cup Sweep Tracker',
+    eyebrow: 'Fixtures',
+    heading: 'All upcoming matches',
+    intro:
+      'Kickoff times are shown in Australian Eastern time and update from the configured World Cup data provider.',
+    listId: 'all-upcoming-matches',
+    loadingCopy: 'Loading upcoming matches.',
+    scriptMode: 'upcoming'
+  });
+}
+
+export function renderFinalisedMatchesPage(apiPath = '/api/sweep'): string {
+  return renderSchedulePage({
+    active: 'finalised',
+    apiPath,
+    title: 'All Finalised Matches | World Cup Sweep Tracker',
+    eyebrow: 'Results',
+    heading: 'All finalised matches',
+    intro:
+      'Completed matches are shown newest first with final scores, Australian Eastern kickoff times, and sweep ownership.',
+    listId: 'all-finalised-matches',
+    loadingCopy: 'Loading finalised matches.',
+    scriptMode: 'finalised'
+  });
+}
+
+interface SchedulePageOptions {
+  active: 'upcoming' | 'finalised';
+  apiPath: string;
+  title: string;
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  listId: string;
+  loadingCopy: string;
+  scriptMode: 'upcoming' | 'finalised';
+}
+
+function renderSchedulePage(options: SchedulePageOptions): string {
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
-    <title>Upcoming Matches | World Cup Sweep Tracker</title>
+    <title>${escapeHtml(options.title)}</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
-    <main class="app-shell schedule-shell" data-api-path="${escapeHtml(apiPath)}">
-      ${renderSiteNav('matches')}
+    <main class="app-shell schedule-shell" data-api-path="${escapeHtml(options.apiPath)}" data-schedule-mode="${options.scriptMode}">
+      ${renderSiteNav(options.active)}
       <section class="panel schedule-panel" aria-labelledby="matches-title">
         <div class="section-heading schedule-heading">
           <div>
-            <p class="eyebrow">Fixtures</p>
-            <h1 id="matches-title">Upcoming matches</h1>
-            <p class="schedule-intro">Kickoff times are shown in Australian Eastern time and update from the configured World Cup data provider.</p>
+            <p class="eyebrow">${escapeHtml(options.eyebrow)}</p>
+            <h1 id="matches-title">${escapeHtml(options.heading)}</h1>
+            <p class="schedule-intro">${escapeHtml(options.intro)}</p>
           </div>
           <div class="schedule-meta">
             <span id="schedule-updated">Awaiting snapshot</span>
           </div>
         </div>
-        <div id="all-upcoming-matches" class="schedule-list">
-          <p class="empty-copy">Loading upcoming matches.</p>
+        <div id="${escapeHtml(options.listId)}" class="schedule-list">
+          <p class="empty-copy">${escapeHtml(options.loadingCopy)}</p>
         </div>
       </section>
     </main>
@@ -334,10 +376,11 @@ export function renderAdminPage(
 </html>`;
 }
 
-function renderSiteNav(active: 'dashboard' | 'matches'): string {
+function renderSiteNav(active: 'dashboard' | 'upcoming' | 'finalised'): string {
   return `<nav class="site-nav" aria-label="Primary navigation">
     <a href="/" ${active === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a>
-    <a href="/matches" ${active === 'matches' ? 'aria-current="page"' : ''}>All matches</a>
+    <a href="/matches" ${active === 'upcoming' ? 'aria-current="page"' : ''}>All upcoming matches</a>
+    <a href="/finalised-matches" ${active === 'finalised' ? 'aria-current="page"' : ''}>All finalised matches</a>
   </nav>`;
 }
 

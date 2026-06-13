@@ -41,7 +41,7 @@ Railway filesystem writes should be treated as operationally temporary across de
 
 ## Tracking
 
-`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking. It derives teams left, each participant's next match, the next four upcoming matches, recent results, match ownership, and active or eliminated nation status.
+`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking. It derives teams left, each participant's next match, all upcoming matches, all finalised matches, dashboard-limited match/result previews, match ownership, and active or eliminated nation status.
 
 ## Validation
 

@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.10.0 - 2026-06-13
+
+- Renamed the public schedule page to "All upcoming matches" and updated navigation to match.
+- Added `/finalised-matches`, a matching schedule-style page for all completed matches with scores and sweep ownership.
+- Added full finalised-match tracking data while keeping the dashboard's recent results limited to the latest four.
+
 ## 0.9.4 - 2026-06-13
 
 - Increased football-data.org polling to ten-minute full refreshes, with one-minute match-specific refreshes from 85 to 110 minutes after kickoff.

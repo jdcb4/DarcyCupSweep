@@ -16,8 +16,11 @@ const timeFormatter = new Intl.DateTimeFormat('en-AU', {
 async function refreshSchedule() {
   const shell = document.querySelector('[data-api-path]');
   const apiPath = shell?.dataset.apiPath ?? '/api/sweep';
+  const mode = shell?.dataset.scheduleMode ?? 'upcoming';
   const updated = document.querySelector('#schedule-updated');
-  const list = document.querySelector('#all-upcoming-matches');
+  const list = document.querySelector(
+    mode === 'finalised' ? '#all-finalised-matches' : '#all-upcoming-matches'
+  );
 
   try {
     const response = await fetch(apiPath);
@@ -27,36 +30,64 @@ async function refreshSchedule() {
     }
 
     const payload = await response.json();
-    const matches = payload.tracking.allUpcomingMatches ?? payload.tracking.upcomingMatches ?? [];
+    const matches =
+      mode === 'finalised'
+        ? (payload.tracking.allFinalisedMatches ??
+          payload.tracking.recentResults ??
+          [])
+        : (payload.tracking.allUpcomingMatches ??
+          payload.tracking.upcomingMatches ??
+          []);
 
     updated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`;
-    renderSchedule(list, matches);
+    renderSchedule(list, matches, mode);
   } catch (error) {
-    updated.textContent = error instanceof Error ? error.message : 'Unable to load upcoming matches.';
-    renderSchedule(list, []);
+    updated.textContent =
+      error instanceof Error
+        ? error.message
+        : `Unable to load ${mode === 'finalised' ? 'finalised' : 'upcoming'} matches.`;
+    renderSchedule(list, [], mode);
   }
 }
 
-function renderSchedule(container, matches) {
+function renderSchedule(container, matches, mode) {
   if (!container) {
     return;
   }
 
-  const upcoming = matches
-    .filter((match) => match.status !== 'finished')
-    .sort((left, right) => new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime());
+  const scheduledMatches =
+    mode === 'finalised'
+      ? matches
+          .filter((match) => match.status === 'finished')
+          .sort(
+            (left, right) =>
+              new Date(right.utcDate).getTime() -
+              new Date(left.utcDate).getTime()
+          )
+      : matches
+          .filter((match) => match.status !== 'finished')
+          .sort(
+            (left, right) =>
+              new Date(left.utcDate).getTime() -
+              new Date(right.utcDate).getTime()
+          );
 
   container.replaceChildren();
 
-  if (upcoming.length === 0) {
+  if (scheduledMatches.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-copy';
-    empty.textContent = 'No upcoming matches identified yet.';
+    empty.textContent =
+      mode === 'finalised'
+        ? 'No finalised matches identified yet.'
+        : 'No upcoming matches identified yet.';
     container.append(empty);
     return;
   }
 
-  for (const [dateLabel, dateMatches] of groupByAustralianDate(upcoming)) {
+  for (const [dateLabel, dateMatches] of groupByAustralianDate(
+    scheduledMatches
+  )) {
     const group = document.createElement('section');
     group.className = 'schedule-day';
 
@@ -67,7 +98,7 @@ function renderSchedule(container, matches) {
     cards.className = 'schedule-day-grid';
 
     for (const match of dateMatches) {
-      cards.append(renderScheduleCard(match));
+      cards.append(renderScheduleCard(match, mode));
     }
 
     group.append(heading, cards);
@@ -86,7 +117,7 @@ function groupByAustralianDate(matches) {
   return groups;
 }
 
-function renderScheduleCard(match) {
+function renderScheduleCard(match, mode) {
   const card = document.createElement('article');
   card.className = 'schedule-match-card';
 
@@ -98,18 +129,36 @@ function renderScheduleCard(match) {
   round.className = 'match-round';
   round.textContent = match.round;
 
+  const score = document.createElement('strong');
+  score.className = 'scoreline';
+  score.textContent = finalScore(match);
+
   const teams = document.createElement('div');
   teams.className = 'schedule-teams';
   teams.append(
-    renderTeam(match.homeFlagImageUrl, match.homeTeam, match.homeParticipantName),
-    renderTeam(match.awayFlagImageUrl, match.awayTeam, match.awayParticipantName)
+    renderTeam(
+      match.homeFlagImageUrl,
+      match.homeTeam,
+      match.homeParticipantName
+    ),
+    renderTeam(
+      match.awayFlagImageUrl,
+      match.awayTeam,
+      match.awayParticipantName
+    )
   );
 
   const owners = document.createElement('span');
   owners.className = 'match-owners';
   owners.textContent = ownershipSummary(match);
 
-  card.append(time, round, teams, owners);
+  card.append(time, round);
+
+  if (mode === 'finalised') {
+    card.append(score);
+  }
+
+  card.append(teams, owners);
   return card;
 }
 
@@ -119,7 +168,10 @@ function renderTeam(flagImageUrl, team, participantName) {
 
   const label = document.createElement('span');
   label.className = 'match-team-name';
-  label.append(renderFlagImage(flagImageUrl, team), document.createTextNode(team));
+  label.append(
+    renderFlagImage(flagImageUrl, team),
+    document.createTextNode(team)
+  );
 
   const owner = document.createElement('span');
   owner.className = participantName ? 'owner-pill' : 'owner-pill empty-owner';
@@ -158,6 +210,13 @@ function ownershipSummary(match) {
   }
 
   return 'No sweep participants assigned';
+}
+
+function finalScore(match) {
+  const homeGoals = match.homeGoals ?? '-';
+  const awayGoals = match.awayGoals ?? '-';
+  const winner = match.winnerTeam ? ` · ${match.winnerTeam} won` : '';
+  return `${homeGoals}-${awayGoals}${winner}`;
 }
 
 void refreshSchedule();

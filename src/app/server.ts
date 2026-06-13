@@ -20,7 +20,12 @@ import { buildSweepTracking } from '../domain/tracking.js';
 import { loadSweep, saveSweep } from '../services/sweepRepository.js';
 import { createWorldCupProvider } from '../services/worldCupProvider.js';
 import { WorldCupSnapshotService } from '../services/worldCupSnapshotService.js';
-import { renderAdminPage, renderDashboard, renderMatchesPage } from './html.js';
+import {
+  renderAdminPage,
+  renderDashboard,
+  renderFinalisedMatchesPage,
+  renderMatchesPage
+} from './html.js';
 
 export const app = new Hono();
 export const worldCupSnapshotService = new WorldCupSnapshotService(
@@ -62,6 +67,10 @@ app.get('/demo/results', (context) =>
 );
 
 app.get('/matches', (context) => context.html(renderMatchesPage()));
+
+app.get('/finalised-matches', (context) =>
+  context.html(renderFinalisedMatchesPage())
+);
 
 app.get('/admin', async (context) => {
   const authResponse = requireAdmin(context);
