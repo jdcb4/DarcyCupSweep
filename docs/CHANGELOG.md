@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.10.2 - 2026-06-15
+
+- Updated Uruguay's football-data.org country code mapping from `URU` to `URY` and added regression coverage for provider mapping.
+
 ## 0.10.1 - 2026-06-13
 
 - Added versioned static asset URLs so browsers and CDN caches fetch the current schedule script after deploys.

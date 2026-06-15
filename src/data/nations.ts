@@ -38,7 +38,7 @@ export const nations: Nation[] = [
   nation('Spain', 'Group H', 'ESP', 'es'),
   nation('Cape Verde', 'Group H', 'CPV', 'cv'),
   nation('Saudi Arabia', 'Group H', 'KSA', 'sa'),
-  nation('Uruguay', 'Group H', 'URU', 'uy'),
+  nation('Uruguay', 'Group H', 'URY', 'uy'),
   nation('France', 'Group I', 'FRA', 'fr'),
   nation('Senegal', 'Group I', 'SEN', 'sn'),
   nation('Iraq', 'Group I', 'IRQ', 'iq'),
@@ -57,7 +57,12 @@ export const nations: Nation[] = [
   nation('Panama', 'Group L', 'PAN', 'pa')
 ];
 
-function nation(name: string, group: string, code: string, flagCode: string): Nation {
+function nation(
+  name: string,
+  group: string,
+  code: string,
+  flagCode: string
+): Nation {
   return {
     name,
     group,

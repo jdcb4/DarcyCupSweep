@@ -42,6 +42,23 @@ describe('Football-Data provider', () => {
                     away: 0
                   }
                 }
+              },
+              {
+                id: 124,
+                utcDate: '2026-06-18T23:00:00Z',
+                status: 'TIMED',
+                stage: 'GROUP_STAGE',
+                group: 'GROUP_H',
+                matchday: 1,
+                homeTeam: { name: 'Uruguay', tla: 'URY' },
+                awayTeam: { name: 'Saudi Arabia', tla: 'KSA' },
+                score: {
+                  winner: null,
+                  fullTime: {
+                    home: null,
+                    away: null
+                  }
+                }
               }
             ]
           });
@@ -71,6 +88,13 @@ describe('Football-Data provider', () => {
       homeGoals: 1,
       awayGoals: 0,
       winnerTeam: 'Germany'
+    });
+    expect(snapshot.matches[1]).toMatchObject({
+      id: '124',
+      round: 'Group H',
+      status: 'scheduled',
+      homeTeam: 'Uruguay',
+      awayTeam: 'Saudi Arabia'
     });
     expect(
       snapshot.standings.find((standing) => standing.teamName === 'Germany')
