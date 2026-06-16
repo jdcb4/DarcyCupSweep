@@ -4,7 +4,7 @@ import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
-const assetVersion = '0.11.0';
+const assetVersion = '0.11.2';
 
 export interface DashboardRenderOptions {
   apiPath?: string;
@@ -81,7 +81,7 @@ export function renderDashboard(
           <small id="spotlight-leader-detail">$${prizePoolUsd(sweep)} pool waiting for results</small>
         </article>
         <article class="spotlight-card">
-          <span>Next match</span>
+          <span id="spotlight-next-label">Next match</span>
           <strong id="spotlight-next-match">Fixture preview</strong>
           <small id="spotlight-next-detail">Sweep matchups appear here once fixtures are loaded</small>
         </article>
@@ -131,7 +131,7 @@ export function renderDashboard(
             <summary>
               <div>
                 <p class="eyebrow">Fixtures</p>
-                <h2>Next 4 matches</h2>
+                <h2 id="match-panel-heading">Next 4 matches</h2>
               </div>
             </summary>
             <div class="collapsible-body">

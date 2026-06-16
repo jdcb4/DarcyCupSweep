@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.11.2 - 2026-06-17
+
+- Changed the dashboard fixture panel and spotlight labels from next-match wording to live-match wording when a match is live.
+- Added yellow live-state glow styling to live dashboard and schedule match cards.
+- Included the provider match minute in live schedule scorelines when available.
+
 ## 0.11.1 - 2026-06-17
 
 - Fixed football-data.org match-window refreshes by accepting the actual top-level single-match response shape, so live and recently finalised matches no longer leave the public cache stuck on stale scheduled data.

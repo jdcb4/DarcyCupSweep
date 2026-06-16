@@ -121,7 +121,7 @@ function groupByAustralianDate(matches) {
 
 function renderScheduleCard(match, mode) {
   const card = document.createElement('article');
-  card.className = 'schedule-match-card';
+  card.className = `schedule-match-card${match.status === 'live' ? ' is-live' : ''}`;
 
   const time = document.createElement('time');
   time.dateTime = match.utcDate;
@@ -136,7 +136,7 @@ function renderScheduleCard(match, mode) {
   score.textContent =
     mode === 'finalised'
       ? finalScore(match)
-      : `${match.homeGoals ?? '-'}-${match.awayGoals ?? '-'}`;
+      : `${liveMatchLabel(match)} · ${match.homeGoals ?? '-'}-${match.awayGoals ?? '-'}`;
 
   const teams = document.createElement('div');
   teams.className = 'schedule-teams';
@@ -253,6 +253,16 @@ function finalScore(match) {
   const awayGoals = match.awayGoals ?? '-';
   const winner = match.winnerTeam ? ` · ${match.winnerTeam} won` : '';
   return `${homeGoals}-${awayGoals}${winner}`;
+}
+
+function liveMatchLabel(match) {
+  if (match.status !== 'live') {
+    return 'Live';
+  }
+
+  return match.minute === null || match.minute === undefined
+    ? 'Live'
+    : `Live ${match.minute}'`;
 }
 
 void refreshSchedule();

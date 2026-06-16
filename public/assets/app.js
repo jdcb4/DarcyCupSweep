@@ -55,6 +55,7 @@ function renderSpotlights(payload) {
   const leader = payload.leaderboard.find((standing) => standing.prizeUsd > 0);
   const nextMatch = payload.tracking.upcomingMatches[0];
   const latestResult = payload.tracking.recentResults[0];
+  const hasLiveNextMatch = nextMatch?.status === 'live';
 
   setSpotlight(
     'spotlight-leader',
@@ -68,6 +69,10 @@ function renderSpotlights(payload) {
   );
 
   setSpotlight(
+    'spotlight-next-label',
+    hasLiveNextMatch ? 'Live match' : 'Next match'
+  );
+  setSpotlight(
     'spotlight-next-match',
     nextMatch ? matchTitle(nextMatch) : 'Fixture preview'
   );
@@ -77,6 +82,7 @@ function renderSpotlights(payload) {
       ? `${liveMatchLabel(nextMatch)} - ${ownershipSummary(nextMatch)}`
       : 'Sweep matchups appear here once fixtures are loaded'
   );
+  setLiveSpotlightState(hasLiveNextMatch);
 
   setSpotlight(
     'spotlight-last-result',
@@ -113,6 +119,16 @@ function setSpotlight(id, text) {
   }
 }
 
+function setLiveSpotlightState(isLive) {
+  const card = document
+    .querySelector('#spotlight-next-match')
+    ?.closest('.spotlight-card');
+
+  if (card) {
+    card.classList.toggle('is-live', isLive);
+  }
+}
+
 function renderMatches(container, matches) {
   if (!container) {
     return;
@@ -125,8 +141,12 @@ function renderMatches(container, matches) {
         new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
     )
     .slice(0, 4);
+  const hasLiveMatches = visibleMatches.some(
+    (match) => match.status === 'live'
+  );
 
   container.replaceChildren();
+  updateMatchPanelState(container, hasLiveMatches);
 
   if (visibleMatches.length === 0) {
     container.append(renderPreviewMatchCard('upcoming'));
@@ -138,6 +158,19 @@ function renderMatches(container, matches) {
   }
 
   updateCountdowns();
+}
+
+function updateMatchPanelState(container, hasLiveMatches) {
+  const panel = container.closest('.match-countdowns-panel');
+  const heading = document.querySelector('#match-panel-heading');
+
+  if (panel) {
+    panel.classList.toggle('has-live', hasLiveMatches);
+  }
+
+  if (heading) {
+    heading.textContent = hasLiveMatches ? 'Live matches' : 'Next 4 matches';
+  }
 }
 
 function renderRecentResults(container, matches) {
@@ -190,7 +223,7 @@ function renderPreviewMatchCard(variant) {
 
 function renderMatchCard(match, variant) {
   const item = document.createElement('article');
-  item.className = `match-item ${variant === 'result' ? 'is-result' : 'is-upcoming'}${match.isPreview ? ' is-preview' : ''}`;
+  item.className = `match-item ${variant === 'result' ? 'is-result' : 'is-upcoming'}${match.status === 'live' ? ' is-live' : ''}${match.isPreview ? ' is-preview' : ''}`;
 
   const header = document.createElement('div');
   header.className = 'match-card-header';
