@@ -117,9 +117,12 @@ const footballDataMatchesSchema = z.object({
   matches: z.array(footballDataMatchSchema)
 });
 
-const footballDataSingleMatchSchema = z.object({
-  match: footballDataMatchSchema
-});
+const footballDataSingleMatchSchema = z.union([
+  z.object({
+    match: footballDataMatchSchema
+  }),
+  footballDataMatchSchema
+]);
 
 export function createWorldCupProvider(env: AppEnv): WorldCupProvider {
   if (env.RESULTS_PROVIDER === 'football-data') {
@@ -229,7 +232,11 @@ class FootballDataProvider implements WorldCupProvider {
       await this.getJson(url)
     );
 
-    return mapFootballDataMatch(payload.match);
+    const match = footballDataMatchSchema.parse(
+      'match' in payload ? payload.match : payload
+    );
+
+    return mapFootballDataMatch(match);
   }
 
   private url(pathname: string): URL {

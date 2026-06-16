@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.11.1 - 2026-06-17
+
+- Fixed football-data.org match-window refreshes by accepting the actual top-level single-match response shape, so live and recently finalised matches no longer leave the public cache stuck on stale scheduled data.
+
 ## 0.11.0 - 2026-06-16
 
 - Added football-data.org live-score support with live minutes, live score rendering, and adaptive public-page refreshes.

@@ -143,20 +143,18 @@ describe('Football-Data provider', () => {
 
       if (url === 'https://api.football-data.test/v4/matches/123') {
         return jsonResponse({
-          match: {
-            id: 123,
-            utcDate: '2026-06-18T19:00:00Z',
-            status: 'FINISHED',
-            stage: 'GROUP_STAGE',
-            group: 'GROUP_E',
-            homeTeam: { name: 'Germany', tla: 'GER' },
-            awayTeam: { name: 'Cura\u00e7ao', tla: 'CUW' },
-            score: {
-              winner: 'AWAY_TEAM',
-              fullTime: {
-                homeTeam: 1,
-                awayTeam: 2
-              }
+          id: 123,
+          utcDate: '2026-06-18T19:00:00Z',
+          status: 'FINISHED',
+          stage: 'GROUP_STAGE',
+          group: 'GROUP_E',
+          homeTeam: { name: 'Germany', tla: 'GER' },
+          awayTeam: { name: 'Cura\u00e7ao', tla: 'CUW' },
+          score: {
+            winner: 'AWAY_TEAM',
+            fullTime: {
+              homeTeam: 1,
+              awayTeam: 2
             }
           }
         });
