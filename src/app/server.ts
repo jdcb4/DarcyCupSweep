@@ -149,7 +149,7 @@ app.post('/admin', async (context) => {
 
 app.get('/api/sweep', async (context) => {
   const sweep = await loadSweep();
-  const snapshot = await worldCupSnapshotService.getSnapshot();
+  const snapshot = await worldCupSnapshotService.getFreshSnapshot();
 
   return context.json({
     sweep,

@@ -11,16 +11,20 @@ export interface PollDecision {
   intervalMs: number;
   mode: 'full' | 'relevant';
   reason: string;
+  relevantMatchCount?: number;
 }
 
+const fifteenSecondsMs = 15 * 1000;
 const oneMinuteMs = 60 * 1000;
 const fiveMinutesMs = 5 * oneMinuteMs;
 const tenMinutesMs = 10 * oneMinuteMs;
 const oneHourMs = 60 * oneMinuteMs;
 const nominalMatchDurationMs = 2 * oneHourMs;
 const postMatchWindowMs = oneHourMs;
-const footballDataFinishWindowStartMs = 85 * oneMinuteMs;
-const footballDataFinishWindowEndMs = 110 * oneMinuteMs;
+const footballDataPreMatchWindowBeforeMs = 15 * oneMinuteMs;
+const footballDataLiveWindowAfterMs = 125 * oneMinuteMs;
+const footballDataFinalisationWindowAfterMs = 180 * oneMinuteMs;
+const footballDataTargetCallsPerMinute = 18;
 const apiFootballWindowBeforeMs = 15 * oneMinuteMs;
 const apiFootballWindowAfterMs = 3 * oneHourMs;
 
@@ -42,6 +46,31 @@ export class WorldCupSnapshotService {
     }
 
     return this.refresh('full');
+  }
+
+  async getFreshSnapshot(): Promise<WorldCupSnapshot> {
+    if (!this.snapshot) {
+      return this.refresh('full');
+    }
+
+    const decision = getPollingDecision(
+      this.providerName,
+      this.snapshot,
+      this.now()
+    );
+    const updatedAt = new Date(this.snapshot.updatedAt).getTime();
+    const ageMs = this.now().getTime() - updatedAt;
+
+    if (Number.isNaN(updatedAt) || ageMs >= decision.intervalMs) {
+      try {
+        return await this.refresh(decision.mode);
+      } catch (error: unknown) {
+        console.error(formatPollingError(error));
+        return this.snapshot;
+      }
+    }
+
+    return this.snapshot;
   }
 
   start(): void {
@@ -150,17 +179,7 @@ export function getPollingDecision(
   }
 
   if (providerName === 'football-data') {
-    return isWithinFootballDataFinishWindow(snapshot?.matches ?? [], now)
-      ? {
-          intervalMs: oneMinuteMs,
-          mode: 'relevant',
-          reason: 'within football-data likely result window'
-        }
-      : {
-          intervalMs: tenMinutesMs,
-          mode: 'full',
-          reason: 'outside football-data likely result window'
-        };
+    return getFootballDataPollingDecision(snapshot?.matches ?? [], now);
   }
 
   if (providerName === 'api-football') {
@@ -197,19 +216,81 @@ function isWithinOpenFootballPostMatchWindow(
   });
 }
 
-function isWithinFootballDataFinishWindow(
+function getFootballDataPollingDecision(
   matches: Match[],
   now: Date
-): boolean {
+): PollDecision {
   const nowMs = now.getTime();
+  const relevantMatches = matches.filter((match) =>
+    isWithinFootballDataRelevantWindow(match, nowMs)
+  );
 
-  return matches.some((match) => {
-    const kickoff = new Date(match.utcDate).getTime();
-    return (
-      nowMs >= kickoff + footballDataFinishWindowStartMs &&
-      nowMs <= kickoff + footballDataFinishWindowEndMs
-    );
-  });
+  if (relevantMatches.length === 0) {
+    return {
+      intervalMs: tenMinutesMs,
+      mode: 'full',
+      reason: 'outside football-data live windows',
+      relevantMatchCount: 0
+    };
+  }
+
+  const liveMatches = relevantMatches.filter(
+    (match) =>
+      match.status === 'live' || isWithinFootballDataLiveWindow(match, nowMs)
+  );
+  const baseIntervalMs =
+    liveMatches.length > 0 ? fifteenSecondsMs : oneMinuteMs;
+
+  return {
+    intervalMs: applyFootballDataCallBudget(
+      baseIntervalMs,
+      relevantMatches.length
+    ),
+    mode: 'relevant',
+    reason:
+      liveMatches.length > 0
+        ? 'within football-data live window'
+        : 'within football-data pre-match or finalisation window',
+    relevantMatchCount: relevantMatches.length
+  };
+}
+
+function isWithinFootballDataRelevantWindow(match: Match, nowMs: number) {
+  if (match.status === 'finished') {
+    return false;
+  }
+
+  const kickoff = new Date(match.utcDate).getTime();
+
+  return (
+    nowMs >= kickoff - footballDataPreMatchWindowBeforeMs &&
+    nowMs <= kickoff + footballDataFinalisationWindowAfterMs
+  );
+}
+
+function isWithinFootballDataLiveWindow(match: Match, nowMs: number) {
+  if (match.status === 'finished') {
+    return false;
+  }
+
+  const kickoff = new Date(match.utcDate).getTime();
+
+  return nowMs >= kickoff && nowMs <= kickoff + footballDataLiveWindowAfterMs;
+}
+
+function applyFootballDataCallBudget(
+  intervalMs: number,
+  relevantMatchCount: number
+): number {
+  if (relevantMatchCount <= 0) {
+    return intervalMs;
+  }
+
+  const minimumIntervalMs = Math.ceil(
+    (relevantMatchCount * oneMinuteMs) / footballDataTargetCallsPerMinute
+  );
+
+  return Math.max(intervalMs, minimumIntervalMs);
 }
 
 function isWithinApiFootballMatchWindow(matches: Match[], now: Date): boolean {

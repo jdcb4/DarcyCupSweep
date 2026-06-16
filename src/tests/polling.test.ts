@@ -64,20 +64,21 @@ describe('World Cup polling schedule', () => {
     });
   });
 
-  it('polls football-data relevant fixtures every minute during likely result windows', () => {
+  it('polls football-data relevant fixtures every minute before kickoff', () => {
     const decision = getPollingDecision(
       'football-data',
       snapshot,
-      new Date('2026-06-11T11:30:00.000Z')
+      new Date('2026-06-11T09:50:00.000Z')
     );
 
     expect(decision).toMatchObject({
       intervalMs: 60 * 1000,
-      mode: 'relevant'
+      mode: 'relevant',
+      relevantMatchCount: 1
     });
   });
 
-  it('does a full football-data refresh every ten minutes outside likely result windows', () => {
+  it('polls football-data relevant fixtures every fifteen seconds during live windows', () => {
     const decision = getPollingDecision(
       'football-data',
       snapshot,
@@ -85,8 +86,45 @@ describe('World Cup polling schedule', () => {
     );
 
     expect(decision).toMatchObject({
+      intervalMs: 15 * 1000,
+      mode: 'relevant',
+      relevantMatchCount: 1
+    });
+  });
+
+  it('backs off football-data live polling to stay within the call budget', () => {
+    const crowdedSnapshot: WorldCupSnapshot = {
+      ...snapshot,
+      matches: Array.from({ length: 10 }, (_, index) => ({
+        ...snapshot.matches[0],
+        id: `fixture-${index}`,
+        utcDate: '2026-06-11T10:00:00.000Z'
+      }))
+    };
+    const decision = getPollingDecision(
+      'football-data',
+      crowdedSnapshot,
+      new Date('2026-06-11T11:00:00.000Z')
+    );
+
+    expect(decision).toMatchObject({
+      intervalMs: Math.ceil((10 * 60 * 1000) / 18),
+      mode: 'relevant',
+      relevantMatchCount: 10
+    });
+  });
+
+  it('does a full football-data refresh every ten minutes outside live windows', () => {
+    const decision = getPollingDecision(
+      'football-data',
+      snapshot,
+      new Date('2026-06-11T13:01:00.000Z')
+    );
+
+    expect(decision).toMatchObject({
       intervalMs: 10 * 60 * 1000,
-      mode: 'full'
+      mode: 'full',
+      relevantMatchCount: 0
     });
   });
 
@@ -127,5 +165,39 @@ describe('World Cup polling schedule', () => {
     expect(service.getCachedSnapshot()?.updatedAt).toBe(
       '2026-06-11T02:00:00.000Z'
     );
+  });
+
+  it('refreshes stale cached snapshots on public reads', async () => {
+    let fullCalls = 0;
+    let relevantCalls = 0;
+    const service = new WorldCupSnapshotService(
+      {
+        async getSnapshot() {
+          fullCalls += 1;
+
+          return {
+            ...snapshot,
+            updatedAt: '2026-06-11T09:00:00.000Z'
+          };
+        },
+        async refreshRelevantSnapshot(cached) {
+          relevantCalls += 1;
+
+          return {
+            ...cached,
+            updatedAt: '2026-06-11T11:00:00.000Z'
+          };
+        }
+      },
+      'football-data',
+      () => new Date('2026-06-11T11:00:20.000Z')
+    );
+
+    await service.getSnapshot();
+    const refreshed = await service.getFreshSnapshot();
+
+    expect(fullCalls).toBe(1);
+    expect(relevantCalls).toBe(1);
+    expect(refreshed.updatedAt).toBe('2026-06-11T11:00:00.000Z');
   });
 });

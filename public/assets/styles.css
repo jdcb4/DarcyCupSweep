@@ -857,6 +857,12 @@ tbody th {
   font-size: 0.76rem;
 }
 
+.live-label {
+  color: var(--accent-primary);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .match-marker strong,
 .scoreline {
   color: var(--text-primary);

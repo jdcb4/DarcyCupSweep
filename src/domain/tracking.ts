@@ -26,6 +26,7 @@ export interface TrackedMatch {
   utcDate: string;
   round: string;
   status: Match['status'];
+  minute?: number | null;
   homeTeam: string;
   awayTeam: string;
   homeFlag: string;
@@ -246,6 +247,7 @@ function toTrackedMatch(
     utcDate: match.utcDate,
     round: match.round,
     status: match.status,
+    minute: match.minute,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
     homeFlag: homeNation?.flag ?? '',

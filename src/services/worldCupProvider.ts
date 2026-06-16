@@ -97,6 +97,7 @@ const footballDataMatchSchema = z
     id: z.union([z.string(), z.number()]),
     utcDate: z.string(),
     status: z.string(),
+    minute: z.number().int().nonnegative().nullable().optional(),
     stage: z.string().nullable().optional(),
     group: z.string().nullable().optional(),
     matchday: z.number().int().nullable().optional(),
@@ -183,7 +184,7 @@ class FootballDataProvider implements WorldCupProvider {
     snapshot: WorldCupSnapshot,
     now = new Date()
   ): Promise<WorldCupSnapshot> {
-    const relevantMatches = getFootballDataFinishWindowMatches(
+    const relevantMatches = getFootballDataRelevantMatches(
       snapshot.matches,
       now
     );
@@ -408,23 +409,27 @@ function mapFootballDataMatch(
 ): Match {
   const homeTeam = footballDataTeamName(match.homeTeam);
   const awayTeam = footballDataTeamName(match.awayTeam);
+  const status = mapFootballDataStatus(match.status);
   const winner = match.score?.winner;
 
   return {
     id: String(match.id),
     utcDate: match.utcDate,
     round: formatFootballDataRound(match),
-    status: mapFootballDataStatus(match.status),
+    status,
+    minute: match.minute ?? null,
     homeTeam,
     awayTeam,
     homeGoals: getFootballDataGoals(match.score?.fullTime, 'home'),
     awayGoals: getFootballDataGoals(match.score?.fullTime, 'away'),
     winnerTeam:
-      winner === 'HOME_TEAM'
-        ? homeTeam
-        : winner === 'AWAY_TEAM'
-          ? awayTeam
-          : null
+      status !== 'finished'
+        ? null
+        : winner === 'HOME_TEAM'
+          ? homeTeam
+          : winner === 'AWAY_TEAM'
+            ? awayTeam
+            : null
   };
 }
 
@@ -487,20 +492,21 @@ function getApiFootballRelevantMatches(matches: Match[], now: Date): Match[] {
 }
 
 const oneMinuteMs = 60 * 1000;
-const footballDataFinishWindowStartMs = 85 * oneMinuteMs;
-const footballDataFinishWindowEndMs = 110 * oneMinuteMs;
+const footballDataPreMatchWindowBeforeMs = 15 * oneMinuteMs;
+const footballDataFinalisationWindowAfterMs = 180 * oneMinuteMs;
 
-function getFootballDataFinishWindowMatches(
-  matches: Match[],
-  now: Date
-): Match[] {
+function getFootballDataRelevantMatches(matches: Match[], now: Date): Match[] {
   const nowMs = now.getTime();
 
   return matches.filter((match) => {
+    if (match.status === 'finished') {
+      return false;
+    }
+
     const kickoff = new Date(match.utcDate).getTime();
     return (
-      nowMs >= kickoff + footballDataFinishWindowStartMs &&
-      nowMs <= kickoff + footballDataFinishWindowEndMs
+      nowMs >= kickoff - footballDataPreMatchWindowBeforeMs &&
+      nowMs <= kickoff + footballDataFinalisationWindowAfterMs
     );
   });
 }

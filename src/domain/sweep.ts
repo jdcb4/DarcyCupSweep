@@ -51,6 +51,7 @@ export const matchSchema = z.object({
   utcDate: z.string(),
   round: z.string(),
   status: z.enum(['scheduled', 'live', 'finished']),
+  minute: z.number().int().nonnegative().nullable().optional(),
   homeTeam: teamNameSchema,
   awayTeam: teamNameSchema,
   homeGoals: z.number().int().nonnegative().nullable(),

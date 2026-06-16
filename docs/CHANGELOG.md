@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.11.0 - 2026-06-16
+
+- Added football-data.org live-score support with live minutes, live score rendering, and adaptive public-page refreshes.
+- Reworked football-data.org polling to use match-specific refreshes around pre-match, live, and finalisation windows with a call-budget guard below the 20 calls/minute tier.
+- Added stale-cache refreshes for public API reads so serverless/on-demand requests can refresh old live data without calling the provider on every page load.
+
 ## 0.10.2 - 2026-06-15
 
 - Updated Uruguay's football-data.org country code mapping from `URU` to `URY` and added regression coverage for provider mapping.

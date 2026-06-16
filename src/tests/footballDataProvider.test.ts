@@ -59,6 +59,24 @@ describe('Football-Data provider', () => {
                     away: null
                   }
                 }
+              },
+              {
+                id: 125,
+                utcDate: '2026-06-19T03:00:00Z',
+                status: 'IN_PLAY',
+                minute: 63,
+                stage: 'GROUP_STAGE',
+                group: 'GROUP_D',
+                matchday: 1,
+                homeTeam: { name: 'United States', tla: 'USA' },
+                awayTeam: { name: 'Paraguay', tla: 'PAR' },
+                score: {
+                  winner: 'HOME_TEAM',
+                  fullTime: {
+                    home: 2,
+                    away: 1
+                  }
+                }
               }
             ]
           });
@@ -95,6 +113,17 @@ describe('Football-Data provider', () => {
       status: 'scheduled',
       homeTeam: 'Uruguay',
       awayTeam: 'Saudi Arabia'
+    });
+    expect(snapshot.matches[2]).toMatchObject({
+      id: '125',
+      round: 'Group D',
+      status: 'live',
+      minute: 63,
+      homeTeam: 'USA',
+      awayTeam: 'Paraguay',
+      homeGoals: 2,
+      awayGoals: 1,
+      winnerTeam: null
     });
     expect(
       snapshot.standings.find((standing) => standing.teamName === 'Germany')

@@ -28,6 +28,7 @@ async function refreshDashboard() {
     renderContenders(contenderList, payload.tracking.participants);
     renderParticipantTracking(payload.tracking.participants);
     renderNationStatuses(payload.tracking.nations);
+    scheduleDashboardRefresh(getRefreshDelay(payload));
 
     if (payload.sweep.status === 'active') {
       for (const standing of payload.leaderboard) {
@@ -46,6 +47,7 @@ async function refreshDashboard() {
     renderContenders(contenderList, []);
     renderMatches(matchList, []);
     renderRecentResults(recentResultsList, []);
+    scheduleDashboardRefresh(2 * 60 * 1000);
   }
 }
 
@@ -67,14 +69,12 @@ function renderSpotlights(payload) {
 
   setSpotlight(
     'spotlight-next-match',
-    nextMatch
-      ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam}`
-      : 'Fixture preview'
+    nextMatch ? matchTitle(nextMatch) : 'Fixture preview'
   );
   setSpotlight(
     'spotlight-next-detail',
     nextMatch
-      ? `${ownershipSummary(nextMatch)} - ${new Date(nextMatch.utcDate).toLocaleString()}`
+      ? `${liveMatchLabel(nextMatch)} - ${ownershipSummary(nextMatch)}`
       : 'Sweep matchups appear here once fixtures are loaded'
   );
 
@@ -237,6 +237,16 @@ function renderMatchCard(match, variant) {
       : 'Draw';
 
     marker.append(score, winner);
+  } else if (match.status === 'live') {
+    const label = document.createElement('span');
+    label.className = 'live-label';
+    label.textContent = liveMatchLabel(match);
+
+    const score = document.createElement('strong');
+    score.className = 'scoreline';
+    score.textContent = `${match.homeGoals ?? '-'} - ${match.awayGoals ?? '-'}`;
+
+    marker.append(label, score);
   } else {
     const label = document.createElement('span');
     label.textContent = 'Kickoff';
@@ -467,7 +477,7 @@ function renderNextMatch(match) {
     return element;
   }
 
-  element.textContent = `${match.homeTeam} vs ${match.awayTeam}`;
+  element.textContent = matchTitle(match);
   return element;
 }
 
@@ -505,6 +515,24 @@ function winnerOwnerSuffix(match) {
   }
 
   return '';
+}
+
+function matchTitle(match) {
+  if (match.status === 'live') {
+    return `${match.homeTeam} ${match.homeGoals ?? '-'} - ${match.awayGoals ?? '-'} ${match.awayTeam}`;
+  }
+
+  return `${match.homeTeam} vs ${match.awayTeam}`;
+}
+
+function liveMatchLabel(match) {
+  if (match.status !== 'live') {
+    return new Date(match.utcDate).toLocaleString();
+  }
+
+  return match.minute === null || match.minute === undefined
+    ? 'Live'
+    : `Live ${match.minute}'`;
 }
 
 function renderNationStatuses(nations) {
@@ -605,6 +633,37 @@ function cssEscape(value) {
   }
 
   return value.replaceAll('"', '\\"');
+}
+
+function getRefreshDelay(payload) {
+  const matches = [
+    ...(payload.tracking.upcomingMatches ?? []),
+    ...(payload.tracking.allUpcomingMatches ?? [])
+  ];
+
+  if (matches.some((match) => match.status === 'live')) {
+    return 15 * 1000;
+  }
+
+  const now = Date.now();
+  const hasNearMatch = matches.some((match) => {
+    if (match.status === 'finished') {
+      return false;
+    }
+
+    const kickoff = new Date(match.utcDate).getTime();
+    return now >= kickoff - 15 * 60 * 1000 && now <= kickoff + 180 * 60 * 1000;
+  });
+
+  return hasNearMatch ? 60 * 1000 : 2 * 60 * 1000;
+}
+
+function scheduleDashboardRefresh(delayMs) {
+  globalThis.clearTimeout(globalThis.dashboardRefreshTimer);
+  globalThis.dashboardRefreshTimer = globalThis.setTimeout(
+    refreshDashboard,
+    delayMs
+  );
 }
 
 void refreshDashboard();

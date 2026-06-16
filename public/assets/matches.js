@@ -41,12 +41,14 @@ async function refreshSchedule() {
 
     updated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`;
     renderSchedule(list, matches, mode);
+    scheduleRefresh(getRefreshDelay(payload));
   } catch (error) {
     updated.textContent =
       error instanceof Error
         ? error.message
         : `Unable to load ${mode === 'finalised' ? 'finalised' : 'upcoming'} matches.`;
     renderSchedule(list, [], mode);
+    scheduleRefresh(2 * 60 * 1000);
   }
 }
 
@@ -131,7 +133,10 @@ function renderScheduleCard(match, mode) {
 
   const score = document.createElement('strong');
   score.className = 'scoreline';
-  score.textContent = finalScore(match);
+  score.textContent =
+    mode === 'finalised'
+      ? finalScore(match)
+      : `${match.homeGoals ?? '-'}-${match.awayGoals ?? '-'}`;
 
   const teams = document.createElement('div');
   teams.className = 'schedule-teams';
@@ -154,7 +159,7 @@ function renderScheduleCard(match, mode) {
 
   card.append(time, round);
 
-  if (mode === 'finalised') {
+  if (mode === 'finalised' || match.status === 'live') {
     card.append(score);
   }
 
@@ -210,6 +215,37 @@ function ownershipSummary(match) {
   }
 
   return 'No sweep participants assigned';
+}
+
+function getRefreshDelay(payload) {
+  const matches = [
+    ...(payload.tracking.upcomingMatches ?? []),
+    ...(payload.tracking.allUpcomingMatches ?? [])
+  ];
+
+  if (matches.some((match) => match.status === 'live')) {
+    return 15 * 1000;
+  }
+
+  const now = Date.now();
+  const hasNearMatch = matches.some((match) => {
+    if (match.status === 'finished') {
+      return false;
+    }
+
+    const kickoff = new Date(match.utcDate).getTime();
+    return now >= kickoff - 15 * 60 * 1000 && now <= kickoff + 180 * 60 * 1000;
+  });
+
+  return hasNearMatch ? 60 * 1000 : 2 * 60 * 1000;
+}
+
+function scheduleRefresh(delayMs) {
+  globalThis.clearTimeout(globalThis.scheduleRefreshTimer);
+  globalThis.scheduleRefreshTimer = globalThis.setTimeout(
+    refreshSchedule,
+    delayMs
+  );
 }
 
 function finalScore(match) {

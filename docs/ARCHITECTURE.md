@@ -41,7 +41,7 @@ Railway filesystem writes should be treated as operationally temporary across de
 
 ## Tracking
 
-`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking. It derives teams left, each participant's next match, all upcoming matches, all finalised matches, dashboard-limited match/result previews, match ownership, and active or eliminated nation status.
+`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking. It derives teams left, each participant's next match, all upcoming matches, all finalised matches, dashboard-limited match/result previews, live score fields, match ownership, and active or eliminated nation status.
 
 ## Validation
 
@@ -53,12 +53,14 @@ Environment variables flow through `src/config/env.ts`, which loads local `.env`
 
 ## Results polling
 
-Public API routes read from `WorldCupSnapshotService` rather than directly polling the provider on every page load. On a direct server run, the service starts a background polling loop and serves the latest cached snapshot.
+Public API routes read from `WorldCupSnapshotService` rather than directly polling the provider on every page load. On a direct server run, the service starts a background polling loop and serves the latest cached snapshot. Public API reads also refresh stale cached snapshots according to the provider-specific polling decision, so serverless/on-demand requests can update live data without fetching the provider on every request.
 
 - OpenFootball: full snapshot refresh every hour, or every five minutes during the hour after a match's nominal end time. Nominal end is kickoff plus two hours.
-- football-data.org: full snapshot refresh every ten minutes outside likely result windows. From 85 to 110 minutes after kickoff, it refreshes only relevant match IDs every minute and recalculates derived group standings from the refreshed match list.
+- football-data.org: full snapshot refresh every ten minutes outside match windows. From 15 minutes before kickoff to kickoff, it refreshes relevant unfinished match IDs every minute. From kickoff to 125 minutes after kickoff, it refreshes relevant unfinished match IDs every 15 seconds unless the 18 calls/minute budget guard requires a slower interval. From 125 to 180 minutes after kickoff, it refreshes relevant unfinished match IDs every minute. Match-specific refreshes recalculate derived group standings from the refreshed match list.
 - API-Football: full snapshot refresh every hour outside match windows. Around match windows, it refreshes only relevant fixture IDs every ten minutes. The match window is 15 minutes before kickoff through three hours after kickoff.
 - Mock: hourly refresh.
+
+Browser pages poll the app API, not football-data.org directly. Public pages refresh every 15 seconds while any tracked match is live, every minute around pre-match/finalisation windows, and every two minutes otherwise.
 
 ## Testing
 
