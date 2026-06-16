@@ -10,6 +10,7 @@
   --text-on-strong: #f8fff8;
   --accent-primary: #48c78e;
   --accent-secondary: #e0b84f;
+  --accent-live: #ffd84d;
   --accent-info: #66b7d8;
   --accent-danger: #ef6f6f;
   --border-subtle: #26352f;
@@ -769,6 +770,15 @@ tbody th {
 
 .live-match-panel {
   margin: 12px 0;
+  border-color: rgb(255 216 77 / 0.86);
+  box-shadow:
+    0 0 0 1px rgb(255 216 77 / 0.24),
+    0 0 26px rgb(255 216 77 / 0.22),
+    var(--shadow-panel);
+}
+
+.live-match-panel .match-item.is-live {
+  border-color: rgb(255 216 77 / 0.72);
 }
 
 .match-list {

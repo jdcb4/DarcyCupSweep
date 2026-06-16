@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.11.4 - 2026-06-17
+
+- Added a scoped yellow glow border to the dedicated live-match dashboard panel.
+
 ## 0.11.3 - 2026-06-17
 
 - Moved live matches into a dedicated dashboard panel above the highlight cards and removed them from the next-matches panel.
