@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.11.3 - 2026-06-17
+
+- Moved live matches into a dedicated dashboard panel above the highlight cards and removed them from the next-matches panel.
+- Added a kickoff-based elapsed-minute fallback for live matches when football-data.org does not provide a match minute.
+- Restored live match cards to the standard fixture-card styling.
+
 ## 0.11.2 - 2026-06-17
 
 - Changed the dashboard fixture panel and spotlight labels from next-match wording to live-match wording when a match is live.

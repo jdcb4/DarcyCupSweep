@@ -121,7 +121,7 @@ function groupByAustralianDate(matches) {
 
 function renderScheduleCard(match, mode) {
   const card = document.createElement('article');
-  card.className = `schedule-match-card${match.status === 'live' ? ' is-live' : ''}`;
+  card.className = 'schedule-match-card';
 
   const time = document.createElement('time');
   time.dateTime = match.utcDate;
@@ -260,9 +260,29 @@ function liveMatchLabel(match) {
     return 'Live';
   }
 
-  return match.minute === null || match.minute === undefined
-    ? 'Live'
-    : `Live ${match.minute}'`;
+  const elapsedMinutes = liveElapsedMinutes(match);
+
+  return elapsedMinutes === null ? 'Live' : `Live ${elapsedMinutes}'`;
+}
+
+function liveElapsedMinutes(match) {
+  if (Number.isInteger(match.minute)) {
+    return match.minute;
+  }
+
+  const kickoff = new Date(match.utcDate).getTime();
+
+  if (Number.isNaN(kickoff)) {
+    return null;
+  }
+
+  const elapsedMinutes = Math.floor((Date.now() - kickoff) / 60000);
+
+  if (elapsedMinutes < 0) {
+    return null;
+  }
+
+  return Math.min(elapsedMinutes, 130);
 }
 
 void refreshSchedule();

@@ -10,7 +10,6 @@
   --text-on-strong: #f8fff8;
   --accent-primary: #48c78e;
   --accent-secondary: #e0b84f;
-  --accent-live: #ffd84d;
   --accent-info: #66b7d8;
   --accent-danger: #ef6f6f;
   --border-subtle: #26352f;
@@ -287,23 +286,6 @@ h2 {
   min-height: 98px;
   padding: 14px;
   border-color: rgb(72 199 142 / 0.14);
-}
-
-.spotlight-card.is-live,
-.match-countdowns-panel.has-live,
-.match-item.is-live,
-.schedule-match-card.is-live {
-  border-color: rgb(255 216 77 / 0.84);
-  box-shadow:
-    0 0 0 1px rgb(255 216 77 / 0.24),
-    0 0 26px rgb(255 216 77 / 0.22),
-    var(--shadow-card);
-}
-
-.spotlight-card.is-live {
-  background:
-    linear-gradient(135deg, rgb(255 216 77 / 0.12), transparent 58%),
-    var(--surface-raised);
 }
 
 .spotlight-card span,
@@ -785,6 +767,10 @@ tbody th {
   margin-bottom: 10px;
 }
 
+.live-match-panel {
+  margin: 12px 0;
+}
+
 .match-list {
   display: grid;
   gap: 10px;
@@ -804,13 +790,6 @@ tbody th {
   border-style: dashed;
   background:
     linear-gradient(135deg, rgb(102 183 216 / 0.1), transparent 58%),
-    var(--surface-sunken);
-}
-
-.match-item.is-live,
-.schedule-match-card.is-live {
-  background:
-    linear-gradient(135deg, rgb(255 216 77 / 0.12), transparent 62%),
     var(--surface-sunken);
 }
 
@@ -883,7 +862,7 @@ tbody th {
 }
 
 .live-label {
-  color: var(--accent-live);
+  color: var(--accent-primary);
   font-weight: 900;
   text-transform: uppercase;
 }

@@ -11,6 +11,8 @@ async function refreshDashboard() {
   const contenderList = document.querySelector('#contender-list');
   const matchList = document.querySelector('#match-countdowns-list');
   const recentResultsList = document.querySelector('#recent-results-list');
+  const liveMatchPanel = document.querySelector('#live-match-panel');
+  const liveMatchCard = document.querySelector('#live-match-card');
 
   try {
     const response = await fetch(apiPath);
@@ -22,6 +24,7 @@ async function refreshDashboard() {
     const payload = await response.json();
 
     lastUpdated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString()}`;
+    renderLiveMatch(liveMatchPanel, liveMatchCard, findLiveMatch(payload));
     renderSpotlights(payload);
     renderMatches(matchList, payload.tracking.upcomingMatches);
     renderRecentResults(recentResultsList, payload.tracking.recentResults);
@@ -43,6 +46,7 @@ async function refreshDashboard() {
     }
   } catch (error) {
     lastUpdated.textContent = 'Snapshot failed';
+    renderLiveMatch(liveMatchPanel, liveMatchCard, null);
     renderSpotlightError(error);
     renderContenders(contenderList, []);
     renderMatches(matchList, []);
@@ -53,9 +57,10 @@ async function refreshDashboard() {
 
 function renderSpotlights(payload) {
   const leader = payload.leaderboard.find((standing) => standing.prizeUsd > 0);
-  const nextMatch = payload.tracking.upcomingMatches[0];
+  const nextMatch = payload.tracking.upcomingMatches.find(
+    (match) => match.status !== 'live'
+  );
   const latestResult = payload.tracking.recentResults[0];
-  const hasLiveNextMatch = nextMatch?.status === 'live';
 
   setSpotlight(
     'spotlight-leader',
@@ -70,7 +75,7 @@ function renderSpotlights(payload) {
 
   setSpotlight(
     'spotlight-next-label',
-    hasLiveNextMatch ? 'Live match' : 'Next match'
+    'Next match'
   );
   setSpotlight(
     'spotlight-next-match',
@@ -82,7 +87,6 @@ function renderSpotlights(payload) {
       ? `${liveMatchLabel(nextMatch)} - ${ownershipSummary(nextMatch)}`
       : 'Sweep matchups appear here once fixtures are loaded'
   );
-  setLiveSpotlightState(hasLiveNextMatch);
 
   setSpotlight(
     'spotlight-last-result',
@@ -105,6 +109,7 @@ function renderSpotlightError(error) {
       : 'Unable to load latest World Cup data.';
   setSpotlight('spotlight-leader', 'Unavailable');
   setSpotlight('spotlight-leader-detail', message);
+  setSpotlight('spotlight-next-label', 'Next match');
   setSpotlight('spotlight-next-match', 'Unavailable');
   setSpotlight('spotlight-next-detail', 'Check the data provider.');
   setSpotlight('spotlight-last-result', 'Unavailable');
@@ -119,34 +124,20 @@ function setSpotlight(id, text) {
   }
 }
 
-function setLiveSpotlightState(isLive) {
-  const card = document
-    .querySelector('#spotlight-next-match')
-    ?.closest('.spotlight-card');
-
-  if (card) {
-    card.classList.toggle('is-live', isLive);
-  }
-}
-
 function renderMatches(container, matches) {
   if (!container) {
     return;
   }
 
   const visibleMatches = matches
-    .filter((match) => match.status !== 'finished')
+    .filter((match) => match.status !== 'finished' && match.status !== 'live')
     .sort(
       (left, right) =>
         new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
     )
     .slice(0, 4);
-  const hasLiveMatches = visibleMatches.some(
-    (match) => match.status === 'live'
-  );
 
   container.replaceChildren();
-  updateMatchPanelState(container, hasLiveMatches);
 
   if (visibleMatches.length === 0) {
     container.append(renderPreviewMatchCard('upcoming'));
@@ -158,19 +149,6 @@ function renderMatches(container, matches) {
   }
 
   updateCountdowns();
-}
-
-function updateMatchPanelState(container, hasLiveMatches) {
-  const panel = container.closest('.match-countdowns-panel');
-  const heading = document.querySelector('#match-panel-heading');
-
-  if (panel) {
-    panel.classList.toggle('has-live', hasLiveMatches);
-  }
-
-  if (heading) {
-    heading.textContent = hasLiveMatches ? 'Live matches' : 'Next 4 matches';
-  }
 }
 
 function renderRecentResults(container, matches) {
@@ -196,6 +174,45 @@ function renderRecentResults(container, matches) {
   for (const match of visibleMatches) {
     container.append(renderMatchCard(match, 'result'));
   }
+}
+
+function findLiveMatch(payload) {
+  const matches = [
+    ...(payload.tracking.upcomingMatches ?? []),
+    ...(payload.tracking.allUpcomingMatches ?? [])
+  ];
+
+  return matches
+    .filter((match) => match.status === 'live')
+    .sort(
+      (left, right) =>
+        new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
+    )[0];
+}
+
+function renderLiveMatch(panel, container, match) {
+  if (!panel || !container) {
+    return;
+  }
+
+  container.replaceChildren();
+  panel.hidden = !match;
+
+  const elapsed = document.querySelector('#live-match-elapsed');
+
+  if (!match) {
+    if (elapsed) {
+      elapsed.textContent = 'Live';
+    }
+
+    return;
+  }
+
+  if (elapsed) {
+    elapsed.textContent = liveMatchLabel(match);
+  }
+
+  container.append(renderMatchCard(match, 'upcoming'));
 }
 
 function renderPreviewMatchCard(variant) {
@@ -563,9 +580,29 @@ function liveMatchLabel(match) {
     return new Date(match.utcDate).toLocaleString();
   }
 
-  return match.minute === null || match.minute === undefined
-    ? 'Live'
-    : `Live ${match.minute}'`;
+  const elapsedMinutes = liveElapsedMinutes(match);
+
+  return elapsedMinutes === null ? 'Live' : `Live ${elapsedMinutes}'`;
+}
+
+function liveElapsedMinutes(match) {
+  if (Number.isInteger(match.minute)) {
+    return match.minute;
+  }
+
+  const kickoff = new Date(match.utcDate).getTime();
+
+  if (Number.isNaN(kickoff)) {
+    return null;
+  }
+
+  const elapsedMinutes = Math.floor((Date.now() - kickoff) / 60000);
+
+  if (elapsedMinutes < 0) {
+    return null;
+  }
+
+  return Math.min(elapsedMinutes, 130);
 }
 
 function renderNationStatuses(nations) {
