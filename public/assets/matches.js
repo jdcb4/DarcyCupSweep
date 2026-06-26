@@ -260,29 +260,20 @@ function liveMatchLabel(match) {
     return 'Live';
   }
 
-  const elapsedMinutes = liveElapsedMinutes(match);
-
-  return elapsedMinutes === null ? 'Live' : `Live ${elapsedMinutes}'`;
+  return formatLiveMinute(match);
 }
 
-function liveElapsedMinutes(match) {
-  if (Number.isInteger(match.minute)) {
-    return match.minute;
+function formatLiveMinute(match) {
+  if (!Number.isInteger(match.minute)) {
+    return 'Live';
   }
 
-  const kickoff = new Date(match.utcDate).getTime();
+  const injuryTime =
+    Number.isInteger(match.injuryTime) && match.injuryTime > 0
+      ? `+${match.injuryTime}`
+      : '';
 
-  if (Number.isNaN(kickoff)) {
-    return null;
-  }
-
-  const elapsedMinutes = Math.floor((Date.now() - kickoff) / 60000);
-
-  if (elapsedMinutes < 0) {
-    return null;
-  }
-
-  return Math.min(elapsedMinutes, 130);
+  return `Live ${match.minute}${injuryTime}'`;
 }
 
 void refreshSchedule();

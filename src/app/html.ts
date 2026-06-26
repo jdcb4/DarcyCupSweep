@@ -4,7 +4,7 @@ import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
-const assetVersion = '0.11.4';
+const assetVersion = '0.12.0';
 
 export interface DashboardRenderOptions {
   apiPath?: string;

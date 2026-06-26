@@ -2,6 +2,12 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.12.0 - 2026-06-26
+
+- Opted football-data.org requests into API version `v4.1` so live responses include provider-supplied `minute` and `injuryTime` fields.
+- Passed `injuryTime` through the app snapshot and tracking data for dashboard and schedule rendering.
+- Removed the kickoff-based live-minute fallback from public pages; live timing now comes from football-data.org when available.
+
 ## 0.11.4 - 2026-06-17
 
 - Added a scoped yellow glow border to the dedicated live-match dashboard panel.

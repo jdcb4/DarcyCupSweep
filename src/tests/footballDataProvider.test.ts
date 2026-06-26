@@ -17,7 +17,8 @@ describe('Football-Data provider', () => {
         const url = String(input);
 
         expect(init?.headers).toMatchObject({
-          'X-Auth-Token': 'football-data-test-key'
+          'X-Auth-Token': 'football-data-test-key',
+          'X-Api-Version': 'v4.1'
         });
 
         if (
@@ -65,6 +66,7 @@ describe('Football-Data provider', () => {
                 utcDate: '2026-06-19T03:00:00Z',
                 status: 'IN_PLAY',
                 minute: 63,
+                injuryTime: 2,
                 stage: 'GROUP_STAGE',
                 group: 'GROUP_D',
                 matchday: 1,
@@ -119,6 +121,7 @@ describe('Football-Data provider', () => {
       round: 'Group D',
       status: 'live',
       minute: 63,
+      injuryTime: 2,
       homeTeam: 'USA',
       awayTeam: 'Paraguay',
       homeGoals: 2,
@@ -138,30 +141,39 @@ describe('Football-Data provider', () => {
   });
 
   it('refreshes relevant football-data matches by id during likely result windows', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
 
-      if (url === 'https://api.football-data.test/v4/matches/123') {
-        return jsonResponse({
-          id: 123,
-          utcDate: '2026-06-18T19:00:00Z',
-          status: 'FINISHED',
-          stage: 'GROUP_STAGE',
-          group: 'GROUP_E',
-          homeTeam: { name: 'Germany', tla: 'GER' },
-          awayTeam: { name: 'Cura\u00e7ao', tla: 'CUW' },
-          score: {
-            winner: 'AWAY_TEAM',
-            fullTime: {
-              homeTeam: 1,
-              awayTeam: 2
-            }
-          }
+        expect(init?.headers).toMatchObject({
+          'X-Auth-Token': 'football-data-test-key',
+          'X-Api-Version': 'v4.1'
         });
-      }
 
-      throw new Error(`Unexpected URL ${url}`);
-    });
+        if (url === 'https://api.football-data.test/v4/matches/123') {
+          return jsonResponse({
+            id: 123,
+            utcDate: '2026-06-18T19:00:00Z',
+            status: 'FINISHED',
+            minute: null,
+            injuryTime: null,
+            stage: 'GROUP_STAGE',
+            group: 'GROUP_E',
+            homeTeam: { name: 'Germany', tla: 'GER' },
+            awayTeam: { name: 'Cura\u00e7ao', tla: 'CUW' },
+            score: {
+              winner: 'AWAY_TEAM',
+              fullTime: {
+                homeTeam: 1,
+                awayTeam: 2
+              }
+            }
+          });
+        }
+
+        throw new Error(`Unexpected URL ${url}`);
+      }
+    );
     globalThis.fetch = fetchMock as typeof fetch;
 
     const provider = createWorldCupProvider(

@@ -98,6 +98,7 @@ const footballDataMatchSchema = z
     utcDate: z.string(),
     status: z.string(),
     minute: z.number().int().nonnegative().nullable().optional(),
+    injuryTime: z.number().int().nonnegative().nullable().optional(),
     stage: z.string().nullable().optional(),
     group: z.string().nullable().optional(),
     matchday: z.number().int().nullable().optional(),
@@ -249,7 +250,8 @@ class FootballDataProvider implements WorldCupProvider {
   private async getJson(url: URL): Promise<unknown> {
     const response = await fetch(url, {
       headers: {
-        'X-Auth-Token': this.env.FOOTBALL_DATA_KEY ?? ''
+        'X-Auth-Token': this.env.FOOTBALL_DATA_KEY ?? '',
+        'X-Api-Version': 'v4.1'
       }
     });
     const payload = (await response.json()) as unknown;
@@ -425,6 +427,7 @@ function mapFootballDataMatch(
     round: formatFootballDataRound(match),
     status,
     minute: match.minute ?? null,
+    injuryTime: match.injuryTime ?? null,
     homeTeam,
     awayTeam,
     homeGoals: getFootballDataGoals(match.score?.fullTime, 'home'),
