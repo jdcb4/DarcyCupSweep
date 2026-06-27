@@ -781,6 +781,10 @@ tbody th {
   border-color: rgb(255 216 77 / 0.72);
 }
 
+.live-match-panel .match-list {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
 .match-list {
   display: grid;
   gap: 10px;

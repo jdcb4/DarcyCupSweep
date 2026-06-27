@@ -4,7 +4,7 @@ import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
-const assetVersion = '0.12.0';
+const assetVersion = '0.12.1';
 
 export interface DashboardRenderOptions {
   apiPath?: string;
@@ -77,10 +77,10 @@ export function renderDashboard(
       <section id="live-match-panel" class="panel live-match-panel" aria-live="polite" hidden>
         <div class="section-heading compact">
           <div>
-            <p class="eyebrow">Live match</p>
-            <h2>On now</h2>
+            <p id="live-match-label" class="eyebrow">Live match</p>
+            <h2 id="live-match-heading">On now</h2>
           </div>
-          <p id="live-match-elapsed" class="panel-summary-note">Live</p>
+          <p id="live-match-summary" class="panel-summary-note">Live</p>
         </div>
         <div id="live-match-card" class="match-list"></div>
       </section>

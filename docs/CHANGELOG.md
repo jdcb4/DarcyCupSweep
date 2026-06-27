@@ -2,6 +2,11 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.12.1 - 2026-06-27
+
+- Updated the dashboard live score panel to show multiple simultaneous live matches.
+- Kept live matches out of the next-matches panel while filling that panel from the full upcoming fixture list.
+
 ## 0.12.0 - 2026-06-26
 
 - Opted football-data.org requests into API version `v4.1` so live responses include provider-supplied `minute` and `injuryTime` fields.

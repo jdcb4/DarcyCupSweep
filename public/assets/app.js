@@ -24,9 +24,9 @@ async function refreshDashboard() {
     const payload = await response.json();
 
     lastUpdated.textContent = `Updated ${new Date(payload.snapshot.updatedAt).toLocaleString()}`;
-    renderLiveMatch(liveMatchPanel, liveMatchCard, findLiveMatch(payload));
+    renderLiveMatches(liveMatchPanel, liveMatchCard, findLiveMatches(payload));
     renderSpotlights(payload);
-    renderMatches(matchList, payload.tracking.upcomingMatches);
+    renderMatches(matchList, getUpcomingMatchPool(payload));
     renderRecentResults(recentResultsList, payload.tracking.recentResults);
     renderContenders(contenderList, payload.tracking.participants);
     renderParticipantTracking(payload.tracking.participants);
@@ -46,7 +46,7 @@ async function refreshDashboard() {
     }
   } catch (error) {
     lastUpdated.textContent = 'Snapshot failed';
-    renderLiveMatch(liveMatchPanel, liveMatchCard, null);
+    renderLiveMatches(liveMatchPanel, liveMatchCard, []);
     renderSpotlightError(error);
     renderContenders(contenderList, []);
     renderMatches(matchList, []);
@@ -57,7 +57,7 @@ async function refreshDashboard() {
 
 function renderSpotlights(payload) {
   const leader = payload.leaderboard.find((standing) => standing.prizeUsd > 0);
-  const nextMatch = payload.tracking.upcomingMatches.find(
+  const nextMatch = getUpcomingMatchPool(payload).find(
     (match) => match.status !== 'live'
   );
   const latestResult = payload.tracking.recentResults[0];
@@ -173,43 +173,73 @@ function renderRecentResults(container, matches) {
   }
 }
 
-function findLiveMatch(payload) {
-  const matches = [
-    ...(payload.tracking.upcomingMatches ?? []),
-    ...(payload.tracking.allUpcomingMatches ?? [])
-  ];
-
-  return matches
-    .filter((match) => match.status === 'live')
-    .sort(
-      (left, right) =>
-        new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
-    )[0];
+function getUpcomingMatchPool(payload) {
+  return uniqueMatches([
+    ...(payload.tracking.allUpcomingMatches ?? []),
+    ...(payload.tracking.upcomingMatches ?? [])
+  ]).sort(
+    (left, right) =>
+      new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
+  );
 }
 
-function renderLiveMatch(panel, container, match) {
+function uniqueMatches(matches) {
+  return [...new Map(matches.map((match) => [match.id, match])).values()];
+}
+
+function findLiveMatches(payload) {
+  return getUpcomingMatchPool(payload).filter(
+    (match) => match.status === 'live'
+  );
+}
+
+function renderLiveMatches(panel, container, matches) {
   if (!panel || !container) {
     return;
   }
 
   container.replaceChildren();
-  panel.hidden = !match;
+  panel.hidden = matches.length === 0;
 
-  const elapsed = document.querySelector('#live-match-elapsed');
+  const label = document.querySelector('#live-match-label');
+  const heading = document.querySelector('#live-match-heading');
+  const summary = document.querySelector('#live-match-summary');
 
-  if (!match) {
-    if (elapsed) {
-      elapsed.textContent = 'Live';
+  if (matches.length === 0) {
+    if (label) {
+      label.textContent = 'Live match';
+    }
+
+    if (heading) {
+      heading.textContent = 'On now';
+    }
+
+    if (summary) {
+      summary.textContent = 'Live';
     }
 
     return;
   }
 
-  if (elapsed) {
-    elapsed.textContent = liveMatchLabel(match);
+  if (label) {
+    label.textContent = matches.length === 1 ? 'Live match' : 'Live matches';
   }
 
-  container.append(renderMatchCard(match, 'upcoming'));
+  if (heading) {
+    heading.textContent =
+      matches.length === 1 ? 'On now' : `${matches.length} on now`;
+  }
+
+  if (summary) {
+    summary.textContent =
+      matches.length === 1
+        ? liveMatchLabel(matches[0])
+        : `${matches.length} live`;
+  }
+
+  for (const match of matches) {
+    container.append(renderMatchCard(match, 'upcoming'));
+  }
 }
 
 function renderPreviewMatchCard(variant) {
