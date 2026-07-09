@@ -96,8 +96,7 @@ export function calculatePrizeEvents(
   }));
 
   const final = snapshot.matches.find(
-    (match) =>
-      match.round.toLowerCase().includes('final') && match.status === 'finished'
+    (match) => isGrandFinalRound(match.round) && match.status === 'finished'
   );
 
   if (!final?.winnerTeam) {
@@ -122,6 +121,15 @@ export function calculatePrizeEvents(
       amountUsd: sweep.prizesUsd.runnerUp
     }
   ];
+}
+
+function isGrandFinalRound(round: string): boolean {
+  const normalized = round
+    .trim()
+    .replaceAll('_', ' ')
+    .toLocaleLowerCase('en-US');
+
+  return normalized === 'final' || normalized.startsWith('final -');
 }
 
 function getConcludedGroupWinners(snapshot: WorldCupSnapshot): GroupStanding[] {

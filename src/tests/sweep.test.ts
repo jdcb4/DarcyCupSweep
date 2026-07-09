@@ -143,6 +143,77 @@ describe('sweep domain', () => {
     });
   });
 
+  it('does not allocate champion or runner-up prizes for quarter-finals or semi-finals', () => {
+    const leaderboard = calculateLeaderboard(sweep, {
+      source: 'test',
+      updatedAt: '2026-07-10T00:00:00.000Z',
+      standings: [],
+      matches: [
+        {
+          id: 'quarter-final',
+          utcDate: '2026-07-10T00:00:00.000Z',
+          round: 'Quarter-final',
+          status: 'finished',
+          homeTeam: 'Argentina',
+          awayTeam: 'Brazil',
+          homeGoals: 2,
+          awayGoals: 1,
+          winnerTeam: 'Argentina'
+        },
+        {
+          id: 'semi-finals',
+          utcDate: '2026-07-14T00:00:00.000Z',
+          round: 'Semi Finals',
+          status: 'finished',
+          homeTeam: 'Japan',
+          awayTeam: 'USA',
+          homeGoals: 1,
+          awayGoals: 0,
+          winnerTeam: 'Japan'
+        }
+      ]
+    });
+
+    expect(
+      leaderboard.find((standing) => standing.participantName === 'Darcy')
+        ?.prizeUsd
+    ).toBe(0);
+    expect(
+      leaderboard.find((standing) => standing.participantName === 'Joe')
+        ?.prizeUsd
+    ).toBe(0);
+  });
+
+  it('allocates champion and runner-up prizes for the grand final only', () => {
+    const leaderboard = calculateLeaderboard(sweep, {
+      source: 'test',
+      updatedAt: '2026-07-19T22:00:00.000Z',
+      standings: [],
+      matches: [
+        {
+          id: 'grand-final',
+          utcDate: '2026-07-19T22:00:00.000Z',
+          round: 'Final - New York/New Jersey',
+          status: 'finished',
+          homeTeam: 'Argentina',
+          awayTeam: 'Brazil',
+          homeGoals: 2,
+          awayGoals: 1,
+          winnerTeam: 'Argentina'
+        }
+      ]
+    });
+
+    expect(
+      leaderboard.find((standing) => standing.participantName === 'Darcy')
+        ?.prizeUsd
+    ).toBe(800);
+    expect(
+      leaderboard.find((standing) => standing.participantName === 'Joe')
+        ?.prizeUsd
+    ).toBe(200);
+  });
+
   it('does not allocate group-winner prizes until a group is complete', () => {
     const leaderboard = calculateLeaderboard(
       {

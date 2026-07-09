@@ -2,6 +2,10 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.12.2 - 2026-07-10
+
+- Fixed prize calculation so champion and runner-up prizes are only paid for the actual grand final, not quarter-finals or semi-finals.
+
 ## 0.12.1 - 2026-06-27
 
 - Updated the dashboard live score panel to show multiple simultaneous live matches.
