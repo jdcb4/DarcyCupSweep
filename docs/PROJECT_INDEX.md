@@ -4,7 +4,7 @@ The first stop for navigating this project. Keep this file factual: it describes
 
 ## What this project is
 
-World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Football World Cup sweep. Each participant receives three teams, the buy-in is $100, and the app tracks the $1,600 prize pool against group-winner, runner-up, and champion outcomes.
+Darcy Cup Sweep Tracker is a private Hono website for hosting sweep events. The app is currently between sweeps: the completed 2026 Football World Cup is archived as outcome data, and the next planned sweep is the 2026 AFL Grand Final player sweep.
 
 ## Current setup state
 
@@ -18,7 +18,7 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 
 - `src/app` - Hono routes, server entrypoint, and HTML rendering.
 - `src/config` - typed environment parsing.
-- `src/data` - local JSON sweep data, static nation metadata, and fixed demo snapshots.
+- `src/data` - local JSON sweep data, static nation metadata, planned/completed sweep metadata, archived outcome data, and fixed demo snapshots.
 - `src/domain` - framework-independent sweep rules, prize calculations, and tracking derivation.
 - `src/services` - IO wrappers for sweep persistence, World Cup providers, and server-side snapshot polling.
 - `src/tests` - Vitest tests.
@@ -48,9 +48,11 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 
 ## User routes
 
-- `/` - sweep dashboard.
-- `/matches` - all upcoming matches with Australian Eastern kickoff times.
-- `/finalised-matches` - all finalised matches with final scores and sweep ownership.
+- `/` - between-sweeps landing page.
+- `/matches` - current active sweep schedule; shows an empty state between sweeps.
+- `/finalised-matches` - current active sweep results; shows an empty state between sweeps.
+- `/sweeps` - previous sweeps and planned future sweep events.
+- `/sweeps/2026-football-world-cup` - outcome archive for the completed World Cup sweep.
 
 ## Key docs
 
@@ -65,4 +67,5 @@ World Cup Sweep Tracker is a Hono website for tracking a 16-participant 2026 Foo
 - [`ROADMAP.md`](ROADMAP.md) - future ideas only, not active work.
 - [`CHANGELOG.md`](CHANGELOG.md) - notable changes by version.
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) - deploy instructions.
+- [`SHAREABLE_IMAGES.md`](SHAREABLE_IMAGES.md) - exportable image design contract.
 - [`../SECURITY.md`](../SECURITY.md) - security rules.

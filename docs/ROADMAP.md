@@ -8,4 +8,7 @@ When the user mentions a future idea that is out of scope for the current task, 
 
 ## Ideas
 
-> Add ideas as bulleted entries. Keep each one short. Link to a discussion or issue if one exists.
+- Build an admin wizard for creating the next sweep from an event type template.
+- Add authenticated manual result entry for one-off player sweeps such as AFL Grand Final sweeps.
+- Move reusable participants and per-sweep allocations into a first-class persisted multi-sweep model.
+- Implement the shareable image renderer described in `docs/SHAREABLE_IMAGES.md`.

@@ -1,15 +1,84 @@
 import type { Nation } from '../data/nations.js';
 import { nations as allNations } from '../data/nations.js';
+import {
+  archivedSweeps,
+  type ArchivedEntryOutcome,
+  type ArchivedParticipantOutcome,
+  type ArchivedSweepOutcome
+} from '../data/sweepArchives.js';
+import {
+  appSweepMode,
+  getCompletedSweeps,
+  getNextSweep,
+  getPlannedSweeps,
+  type SweepEvent
+} from '../data/sweepEvents.js';
 import { tournamentSchedule } from '../config/tournament.js';
 import type { Sweep } from '../domain/sweep.js';
 import { prizePoolUsd } from '../domain/sweep.js';
 
-const assetVersion = '0.12.2';
+const assetVersion = '0.14.0';
 
 export interface DashboardRenderOptions {
   apiPath?: string;
   notice?: string;
   demoLinks?: boolean;
+}
+
+export function renderLandingPage(): string {
+  const nextSweep = getNextSweep();
+  const planned = getPlannedSweeps();
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
+    <title>Darcy Cup Sweep Tracker</title>
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
+  </head>
+  <body>
+    <main class="app-shell landing-shell">
+      ${renderSiteNav('dashboard', { includeCurrentMatches: false })}
+      <section class="landing-hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Darcy Cup</p>
+          <h1 id="page-title">Sweep HQ</h1>
+          <p class="summary">Between sweeps. Past results are archived and the next draw will appear here.</p>
+        </div>
+        <span class="mode-pill">${formatSweepMode(appSweepMode)}</span>
+      </section>
+      ${renderNextSweepBanner(nextSweep)}
+      <section class="landing-grid" aria-label="Sweep overview">
+        <section class="panel landing-panel" aria-labelledby="planned-title">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Upcoming</p>
+              <h2 id="planned-title">Planned sweeps</h2>
+            </div>
+          </div>
+          <div class="sweep-card-list compact">
+            ${planned.map((event) => renderPlannedSweepCard(event)).join('')}
+          </div>
+        </section>
+        <section class="panel landing-panel" aria-labelledby="previous-title">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Archive</p>
+              <h2 id="previous-title">Previous sweeps</h2>
+            </div>
+          </div>
+          <div class="sweep-card-list">
+            ${archivedSweeps.map((archive) => renderArchiveSummaryCard(archive)).join('')}
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="${assetPath('/assets/landing.js')}" type="module"></script>
+  </body>
+</html>`;
 }
 
 export function renderDashboard(
@@ -21,19 +90,7 @@ export function renderDashboard(
   const phaseCopy = isActive
     ? 'Teams allocated. Prize tracking is live.'
     : 'Draw pending. Teams appear after allocation.';
-  const participantRows = sweep.participants
-    .map(
-      (participant, index) => `
-        <tr>
-          <th scope="row">${renderParticipantName(participant.name, index)}</th>
-          <td data-teams-left-for="${escapeHtml(participant.name)}">${participant.teams.length}/${sweep.teamsPerParticipant}</td>
-          <td>${renderTeamList(participant.teams)}</td>
-          <td data-next-match-for="${escapeHtml(participant.name)}"><span class="empty-state">Awaiting fixtures</span></td>
-          <td data-run-for="${escapeHtml(participant.name)}"><span class="empty-state">Awaiting draw</span></td>
-          <td data-prize-for="${escapeHtml(participant.name)}">${isActive ? '$0' : '<span class="empty-state">Pending draw</span>'}</td>
-        </tr>`
-    )
-    .join('');
+  const nextSweep = getNextSweep();
 
   return `<!doctype html>
 <html lang="en">
@@ -41,7 +98,7 @@ export function renderDashboard(
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
-    <title>World Cup Sweep Tracker</title>
+    <title>Darcy Cup Sweep Tracker</title>
     <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
     <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
   </head>
@@ -72,6 +129,7 @@ export function renderDashboard(
         </div>
       </section>
 
+      ${renderNextSweepBanner(nextSweep)}
       ${isActive ? '' : renderDrawCountdown()}
 
       <section id="live-match-panel" class="panel live-match-panel" aria-live="polite" hidden>
@@ -91,16 +149,6 @@ export function renderDashboard(
           <strong id="spotlight-leader">Draw pending</strong>
           <small id="spotlight-leader-detail">$${prizePoolUsd(sweep)} pool waiting for results</small>
         </article>
-        <article class="spotlight-card">
-          <span id="spotlight-next-label">Next match</span>
-          <strong id="spotlight-next-match">Fixture preview</strong>
-          <small id="spotlight-next-detail">Sweep matchups appear here once fixtures are loaded</small>
-        </article>
-        <article class="spotlight-card">
-          <span>Latest result</span>
-          <strong id="spotlight-last-result">Results pending</strong>
-          <small id="spotlight-last-detail">Recent winners appear here after matches finish</small>
-        </article>
       </section>
 
       <section class="content-grid">
@@ -116,66 +164,36 @@ export function renderDashboard(
             <div id="contender-list" class="contender-list" aria-label="Participant contender status">
               <p class="empty-copy">Preparing participant roster.</p>
             </div>
-            <details class="detail-table-panel">
-              <summary>Detailed tracking table</summary>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Participant</th>
-                      <th scope="col">Left</th>
-                      <th scope="col">Allocation</th>
-                      <th scope="col">Next match</th>
-                      <th scope="col">Run</th>
-                      <th scope="col">Prizes</th>
-                    </tr>
-                  </thead>
-                  <tbody>${participantRows}</tbody>
-                </table>
-              </div>
-            </details>
           </div>
         </details>
 
-        <aside class="side-stack" aria-label="Matches and nations">
+        <aside class="side-stack" aria-label="Matches">
           <details class="panel collapsible-panel match-countdowns-panel" open>
             <summary>
               <div>
                 <p class="eyebrow">Fixtures</p>
-                <h2 id="match-panel-heading">Next 4 matches</h2>
+                <h2 id="match-panel-heading">Next match</h2>
               </div>
             </summary>
             <div class="collapsible-body">
               <div id="match-countdowns-list" class="match-list">
                 <p class="empty-copy">Loading fixture preview.</p>
               </div>
+              <a class="panel-footer-link" href="/matches">All upcoming matches</a>
             </div>
           </details>
           <details class="panel collapsible-panel recent-results-panel" open>
             <summary>
               <div>
                 <p class="eyebrow">Results</p>
-                <h2>Latest winners</h2>
+                <h2>Most recent result</h2>
               </div>
             </summary>
             <div class="collapsible-body">
               <div id="recent-results-list" class="match-list">
                 <p class="empty-copy">Results will appear after completed matches.</p>
               </div>
-            </div>
-          </details>
-          <details class="panel collapsible-panel nation-statuses-panel">
-            <summary>
-              <div>
-                <p class="eyebrow">Nations</p>
-                <h2>Cup status</h2>
-              </div>
-              <p id="nation-status-summary" class="panel-summary-note">48 nations</p>
-            </summary>
-            <div class="collapsible-body">
-              <div id="nation-status-list" class="nation-status-list">
-                ${allNations.map((nation) => renderStatusChip(nation)).join('')}
-              </div>
+              <a class="panel-footer-link" href="/finalised-matches">All finalised matches</a>
             </div>
           </details>
         </aside>
@@ -184,6 +202,34 @@ export function renderDashboard(
     <script src="${assetPath('/assets/app.js')}" type="module"></script>
   </body>
 </html>`;
+}
+
+function renderNextSweepBanner(event: SweepEvent | null): string {
+  if (!event) {
+    return `<section class="next-sweep-banner" aria-labelledby="next-sweep-title">
+      <div>
+        <p class="eyebrow">Next sweep</p>
+        <h2 id="next-sweep-title">Yet to be announced</h2>
+      </div>
+      <strong>Stand by</strong>
+    </section>`;
+  }
+
+  const countdown = event.startsAtIso
+    ? `<strong data-countdown-target="${event.startsAtIso}">Calculating</strong>`
+    : '<strong>Date TBA</strong>';
+
+  return `<section class="next-sweep-banner" aria-labelledby="next-sweep-title">
+    <div>
+      <p class="eyebrow">Next sweep</p>
+      <h2 id="next-sweep-title">${escapeHtml(event.name)}</h2>
+      <p>${escapeHtml(event.displayDate)}</p>
+    </div>
+    <div class="next-sweep-clock">
+      ${countdown}
+      <span>${escapeHtml(event.sweepType)}</span>
+    </div>
+  </section>`;
 }
 
 function renderDrawCountdown(): string {
@@ -202,11 +248,156 @@ function renderDrawCountdown(): string {
   </section>`;
 }
 
+export function renderSweepsPage(): string {
+  const completed = getCompletedSweeps();
+  const planned = getPlannedSweeps();
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
+    <title>Previous Sweeps | Darcy Cup</title>
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
+  </head>
+  <body>
+    <main class="app-shell sweeps-shell">
+      ${renderSiteNav('sweeps', { includeCurrentMatches: false })}
+      <section class="panel sweeps-panel" aria-labelledby="sweeps-title">
+        <div class="section-heading schedule-heading">
+          <div>
+            <p class="eyebrow">Sweep history</p>
+            <h1 id="sweeps-title">Previous sweeps</h1>
+            <p class="schedule-intro">Past events stay browsable, with planned sweeps queued separately.</p>
+          </div>
+        </div>
+        <div class="sweep-card-list">
+          ${completed.map((event) => renderSweepHistoryCard(event)).join('')}
+        </div>
+      </section>
+      <section class="panel sweeps-panel" aria-labelledby="planned-sweeps-title">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Next events</p>
+            <h2 id="planned-sweeps-title">Planned sweeps</h2>
+          </div>
+        </div>
+        <div class="sweep-card-list compact">
+          ${planned.map((event) => renderPlannedSweepCard(event)).join('')}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
+export function renderArchivedSweepPage(archive: ArchivedSweepOutcome): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
+    <title>${escapeHtml(archive.name)} Results | Darcy Cup</title>
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
+  </head>
+  <body>
+    <main class="app-shell archive-shell">
+      ${renderSiteNav('sweeps', { includeCurrentMatches: false })}
+      <section class="archive-hero" aria-labelledby="archive-title">
+        <div>
+          <p class="eyebrow">Archived outcome</p>
+          <h1 id="archive-title">${escapeHtml(archive.name)}</h1>
+          <p>${escapeHtml(archive.displayDate)} · ${escapeHtml(archive.sweepType)}</p>
+        </div>
+        <div class="archive-winner">
+          <span>Winner</span>
+          <strong>${escapeHtml(archive.winnerSummary)}</strong>
+          <small>${formatUsd(archive.prizePoolUsd)} prize pool</small>
+        </div>
+      </section>
+      <section class="panel archive-rules" aria-label="Prize rules">
+        ${archive.prizeRules.map((rule) => `<span>${escapeHtml(rule)}</span>`).join('')}
+      </section>
+      <section class="archive-results" aria-label="Participant outcomes">
+        ${archive.participants.map((participant, index) => renderArchiveParticipantCard(participant, index)).join('')}
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
+function renderSweepHistoryCard(event: SweepEvent): string {
+  const archive = archivedSweeps.find((sweep) => sweep.slug === event.slug);
+  const winnerCopy =
+    archive?.winnerSummary ?? 'Winner available in full results';
+
+  return `<a class="sweep-card" href="${escapeHtml(event.publicPath)}">
+    <span>${escapeHtml(event.displayDate)}</span>
+    <strong>${escapeHtml(event.name)}</strong>
+    <small>${escapeHtml(winnerCopy)}</small>
+  </a>`;
+}
+
+function renderArchiveSummaryCard(archive: ArchivedSweepOutcome): string {
+  return `<a class="sweep-card" href="/sweeps/${escapeHtml(archive.slug)}">
+    <span>${escapeHtml(archive.displayDate)}</span>
+    <strong>${escapeHtml(archive.name)}</strong>
+    <small>${escapeHtml(archive.winnerSummary)}</small>
+  </a>`;
+}
+
+function renderArchiveParticipantCard(
+  participant: ArchivedParticipantOutcome,
+  index: number
+): string {
+  const rank = index + 1;
+
+  return `<article class="archive-participant-card${rank === 1 ? ' is-winner' : ''}">
+    <div class="archive-participant-heading">
+      <span class="rank-badge">#${rank}</span>
+      <strong>${escapeHtml(participant.participantName)}</strong>
+      <span>${formatUsd(participant.totalPrizeUsd)}</span>
+    </div>
+    <div class="archive-entry-grid">
+      ${participant.entries.map((entry) => renderArchiveEntry(entry)).join('')}
+    </div>
+  </article>`;
+}
+
+function renderArchiveEntry(entry: ArchivedEntryOutcome): string {
+  const nation = allNations.find((candidate) => candidate.code === entry.code);
+  const prizeCopy =
+    entry.prizeUsd > 0
+      ? `${formatUsd(entry.prizeUsd)} · ${entry.prizeReasons.join(', ')}`
+      : 'No prize';
+
+  return `<span class="archive-entry-card${entry.prizeUsd > 0 ? ' has-prize' : ''}">
+    ${nation ? renderFlagImage(nation) : ''}
+    <span>
+      <strong>${escapeHtml(entry.name)}</strong>
+      <small>${escapeHtml(entry.outcome)}</small>
+      <small>${escapeHtml(prizeCopy)}</small>
+    </span>
+  </span>`;
+}
+
+function renderPlannedSweepCard(event: SweepEvent): string {
+  return `<article class="sweep-card planned">
+    <span>${escapeHtml(event.displayDate)}</span>
+    <strong>${escapeHtml(event.name)}</strong>
+    <small>${escapeHtml(event.sweepType)}</small>
+  </article>`;
+}
+
 export function renderMatchesPage(apiPath = '/api/sweep'): string {
   return renderSchedulePage({
     active: 'upcoming',
     apiPath,
-    title: 'All Upcoming Matches | World Cup Sweep Tracker',
+    title: 'All Upcoming Matches | Darcy Cup Sweep Tracker',
     eyebrow: 'Fixtures',
     heading: 'All upcoming matches',
     intro:
@@ -221,7 +412,7 @@ export function renderFinalisedMatchesPage(apiPath = '/api/sweep'): string {
   return renderSchedulePage({
     active: 'finalised',
     apiPath,
-    title: 'All Finalised Matches | World Cup Sweep Tracker',
+    title: 'All Finalised Matches | Darcy Cup Sweep Tracker',
     eyebrow: 'Results',
     heading: 'All finalised matches',
     intro:
@@ -230,6 +421,39 @@ export function renderFinalisedMatchesPage(apiPath = '/api/sweep'): string {
     loadingCopy: 'Loading finalised matches.',
     scriptMode: 'finalised'
   });
+}
+
+export function renderNoCurrentMatchesPage(
+  active: 'upcoming' | 'finalised'
+): string {
+  const isFinalised = active === 'finalised';
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090f0d" />
+    <title>${isFinalised ? 'Current Results' : 'Current Schedule'} | Darcy Cup Sweep Tracker</title>
+    <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
+    <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
+  </head>
+  <body>
+    <main class="app-shell schedule-shell">
+      ${renderSiteNav(active)}
+      <section class="panel schedule-panel empty-current-panel" aria-labelledby="matches-title">
+        <div class="section-heading schedule-heading">
+          <div>
+            <p class="eyebrow">${isFinalised ? 'Results' : 'Fixtures'}</p>
+            <h1 id="matches-title">${isFinalised ? 'No current sweep results' : 'No active sweep schedule'}</h1>
+            <p class="schedule-intro">${isFinalised ? 'Finalised results will appear here once the next sweep is active.' : 'Upcoming matches will appear here once a sweep with scheduled fixtures is active.'}</p>
+          </div>
+        </div>
+        <a class="panel-footer-link" href="/">Back to sweep HQ</a>
+      </section>
+    </main>
+  </body>
+</html>`;
 }
 
 interface SchedulePageOptions {
@@ -337,7 +561,7 @@ export function renderAdminPage(
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090f0d" />
-    <title>Admin | World Cup Sweep Tracker</title>
+    <title>Admin | Darcy Cup Sweep Tracker</title>
     <link rel="icon" href="${assetPath('/assets/favicon.svg')}" type="image/svg+xml" />
     <link rel="stylesheet" href="${assetPath('/assets/styles.css')}" />
   </head>
@@ -389,20 +613,26 @@ export function renderAdminPage(
 </html>`;
 }
 
-function renderSiteNav(active: 'dashboard' | 'upcoming' | 'finalised'): string {
-  return `<nav class="site-nav" aria-label="Primary navigation">
-    <a href="/" ${active === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a>
-    <a href="/matches" ${active === 'upcoming' ? 'aria-current="page"' : ''}>All upcoming matches</a>
-    <a href="/finalised-matches" ${active === 'finalised' ? 'aria-current="page"' : ''}>All finalised matches</a>
-  </nav>`;
+interface SiteNavOptions {
+  includeCurrentMatches?: boolean;
 }
 
-function renderTeamList(teams: string[]): string {
-  if (teams.length === 0) {
-    return '<span class="empty-state">Unassigned</span>';
-  }
+function renderSiteNav(
+  active: 'dashboard' | 'upcoming' | 'finalised' | 'sweeps',
+  options: SiteNavOptions = {}
+): string {
+  const includeCurrentMatches = options.includeCurrentMatches ?? true;
 
-  return `<ul class="team-list">${teams.map((team) => `<li>${renderTeamLabel(team)}</li>`).join('')}</ul>`;
+  return `<nav class="site-nav" aria-label="Primary navigation">
+    <a href="/" ${active === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a>
+    ${
+      includeCurrentMatches
+        ? `<a href="/matches" ${active === 'upcoming' ? 'aria-current="page"' : ''}>All upcoming matches</a>
+    <a href="/finalised-matches" ${active === 'finalised' ? 'aria-current="page"' : ''}>All finalised matches</a>`
+        : ''
+    }
+    <a href="/sweeps" ${active === 'sweeps' ? 'aria-current="page"' : ''}>Previous sweeps</a>
+  </nav>`;
 }
 
 function renderParticipantName(name: string, index: number): string {
@@ -413,23 +643,20 @@ function renderNationChip(nation: Nation): string {
   return `<button class="nation-chip country-card" type="button" draggable="true" data-team="${escapeHtml(nation.name)}">${renderFlagImage(nation)}<span><strong>${escapeHtml(nation.name)}</strong><small>${escapeHtml(nation.code)}</small></span></button>`;
 }
 
-function renderTeamLabel(team: string): string {
-  const nation = allNations.find((candidate) => candidate.name === team);
-  return nation
-    ? `${renderFlagImage(nation)}<span><strong>${escapeHtml(team)}</strong><small>${escapeHtml(nation.code)}</small></span>`
-    : `<span><strong>${escapeHtml(team)}</strong></span>`;
-}
-
-function renderStatusChip(nation: Nation): string {
-  return `<span class="status-chip country-card" data-nation-status="${escapeHtml(nation.name)}">${renderFlagImage(nation)}<span><strong>${escapeHtml(nation.name)}</strong><small>${escapeHtml(nation.code)}</small></span></span>`;
-}
-
 function renderFlagImage(nation: Nation): string {
   return `<img class="flag-img" src="${escapeHtml(nation.flagImageUrl)}" width="40" height="30" alt="${escapeHtml(`${nation.name} flag`)}" loading="lazy" />`;
 }
 
+function formatSweepMode(mode: string): string {
+  return mode.replaceAll('_', ' ');
+}
+
 function assetPath(path: string): string {
   return `${path}?v=${assetVersion}`;
+}
+
+function formatUsd(value: number): string {
+  return `$${value.toLocaleString('en-US')}`;
 }
 
 export function escapeHtml(value: string): string {

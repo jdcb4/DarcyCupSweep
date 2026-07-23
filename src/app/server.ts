@@ -15,6 +15,8 @@ import {
   demoSweep
 } from '../data/demo.js';
 import { nations } from '../data/nations.js';
+import { getArchivedSweep } from '../data/sweepArchives.js';
+import { appSweepMode } from '../data/sweepEvents.js';
 import { calculateLeaderboard } from '../domain/sweep.js';
 import { buildSweepTracking } from '../domain/tracking.js';
 import { loadSweep, saveSweep } from '../services/sweepRepository.js';
@@ -22,9 +24,13 @@ import { createWorldCupProvider } from '../services/worldCupProvider.js';
 import { WorldCupSnapshotService } from '../services/worldCupSnapshotService.js';
 import {
   renderAdminPage,
+  renderArchivedSweepPage,
   renderDashboard,
   renderFinalisedMatchesPage,
-  renderMatchesPage
+  renderLandingPage,
+  renderMatchesPage,
+  renderNoCurrentMatchesPage,
+  renderSweepsPage
 } from './html.js';
 
 export const app = new Hono();
@@ -41,10 +47,7 @@ app.get('/health', (context) =>
   })
 );
 
-app.get('/', async (context) => {
-  const sweep = await loadSweep();
-  return context.html(renderDashboard(sweep));
-});
+app.get('/', (context) => context.html(renderLandingPage()));
 
 app.get('/demo/allocated', (context) =>
   context.html(
@@ -66,10 +69,40 @@ app.get('/demo/results', (context) =>
   )
 );
 
-app.get('/matches', (context) => context.html(renderMatchesPage()));
+app.get('/matches', (context) =>
+  context.html(
+    appSweepMode === 'between_sweeps'
+      ? renderNoCurrentMatchesPage('upcoming')
+      : renderMatchesPage()
+  )
+);
 
 app.get('/finalised-matches', (context) =>
-  context.html(renderFinalisedMatchesPage())
+  context.html(
+    appSweepMode === 'between_sweeps'
+      ? renderNoCurrentMatchesPage('finalised')
+      : renderFinalisedMatchesPage()
+  )
+);
+
+app.get('/sweeps', (context) => context.html(renderSweepsPage()));
+
+app.get('/sweeps/2026-football-world-cup', (context) => {
+  const archive = getArchivedSweep('2026-football-world-cup');
+
+  if (!archive) {
+    return context.notFound();
+  }
+
+  return context.html(renderArchivedSweepPage(archive));
+});
+
+app.get('/sweeps/2026-afl-grand-final', (context) =>
+  context.redirect('/sweeps')
+);
+
+app.get('/sweeps/2027-womens-fifa-world-cup', (context) =>
+  context.redirect('/sweeps')
 );
 
 app.get('/admin', async (context) => {
@@ -196,7 +229,7 @@ if (isDirectRun()) {
     },
     (info) => {
       console.log(
-        `World Cup Tracker listening on http://localhost:${info.port}`
+        `Darcy Cup Sweep Tracker listening on http://localhost:${info.port}`
       );
     }
   );

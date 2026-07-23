@@ -27,23 +27,16 @@ async function refreshDashboard() {
     renderLiveMatches(liveMatchPanel, liveMatchCard, findLiveMatches(payload));
     renderSpotlights(payload);
     renderMatches(matchList, getUpcomingMatchPool(payload));
-    renderRecentResults(recentResultsList, payload.tracking.recentResults);
-    renderContenders(contenderList, payload.tracking.participants);
-    renderParticipantTracking(payload.tracking.participants);
-    renderNationStatuses(payload.tracking.nations);
+    renderRecentResults(
+      recentResultsList,
+      payload.tracking.allFinalisedMatches ?? payload.tracking.recentResults
+    );
+    renderContenders(
+      contenderList,
+      payload.tracking.participants,
+      payload.leaderboard
+    );
     scheduleDashboardRefresh(getRefreshDelay(payload));
-
-    if (payload.sweep.status === 'active') {
-      for (const standing of payload.leaderboard) {
-        const prizeCell = document.querySelector(
-          `[data-prize-for="${cssEscape(standing.participantName)}"]`
-        );
-
-        if (prizeCell) {
-          prizeCell.textContent = formatter.format(standing.prizeUsd);
-        }
-      }
-    }
   } catch (error) {
     lastUpdated.textContent = 'Snapshot failed';
     renderLiveMatches(liveMatchPanel, liveMatchCard, []);
@@ -132,7 +125,7 @@ function renderMatches(container, matches) {
       (left, right) =>
         new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime()
     )
-    .slice(0, 4);
+    .slice(0, 1);
 
   container.replaceChildren();
 
@@ -159,7 +152,7 @@ function renderRecentResults(container, matches) {
       (left, right) =>
         new Date(right.utcDate).getTime() - new Date(left.utcDate).getTime()
     )
-    .slice(0, 4);
+    .slice(0, 1);
 
   container.replaceChildren();
 
@@ -366,7 +359,7 @@ function renderTeamRow(flagImageUrl, team, participantName) {
   return row;
 }
 
-function renderContenders(container, participants) {
+function renderContenders(container, participants, leaderboard = []) {
   if (!container) {
     return;
   }
@@ -390,16 +383,23 @@ function renderContenders(container, participants) {
     return;
   }
 
+  const standingByName = new Map(
+    leaderboard.map((standing) => [standing.participantName, standing])
+  );
   const ranked = [...participants].sort(
     (left, right) =>
+      (standingByName.get(right.participantName)?.prizeUsd ?? 0) -
+        (standingByName.get(left.participantName)?.prizeUsd ?? 0) ||
       right.teamsLeft - left.teamsLeft ||
       nextMatchTime(left.nextMatch) - nextMatchTime(right.nextMatch) ||
       left.participantName.localeCompare(right.participantName)
   );
 
   for (const participant of ranked) {
+    const standing = standingByName.get(participant.participantName);
+    const prizeUsd = standing?.prizeUsd ?? 0;
     const card = document.createElement('article');
-    card.className = 'contender-card';
+    card.className = `contender-card${prizeUsd > 0 ? ' has-prize' : ''}`;
 
     const header = document.createElement('div');
     header.className = 'contender-header';
@@ -407,12 +407,20 @@ function renderContenders(container, participants) {
     const name = document.createElement('strong');
     name.textContent = participant.participantName;
 
+    const prize = document.createElement('span');
+    prize.className = 'contender-prize';
+    prize.textContent = formatter.format(prizeUsd);
+
     const left = document.createElement('span');
     left.className =
       participant.teamsLeft > 0 ? 'left-pill active' : 'left-pill eliminated';
     left.textContent = `${participant.teamsLeft} left`;
 
-    header.append(name, left);
+    const badges = document.createElement('span');
+    badges.className = 'contender-badges';
+    badges.append(prize, left);
+
+    header.append(name, badges);
 
     const teams = document.createElement('div');
     teams.className = 'contender-teams';
@@ -440,7 +448,22 @@ function renderContenders(container, participants) {
     run.className = 'contender-run';
     run.textContent = participant.runSummary;
 
-    card.append(header, teams, run);
+    const next = document.createElement('span');
+    next.className = 'contender-next';
+    next.textContent = participant.nextMatch
+      ? `Next: ${matchTitle(participant.nextMatch)}`
+      : 'No upcoming match';
+
+    const events = document.createElement('span');
+    events.className = 'contender-events';
+    events.textContent =
+      standing?.prizeEvents?.length > 0
+        ? standing.prizeEvents
+            .map((event) => `${event.teamName} ${event.label}`)
+            .join(' · ')
+        : 'Prizes pending';
+
+    card.append(header, teams, next, run, events);
     container.append(card);
   }
 }
@@ -519,45 +542,6 @@ function renderPreSweepRoster(container, participants) {
   container.append(roster);
 }
 
-function renderParticipantTracking(participants) {
-  for (const participant of participants) {
-    const teamsLeftCell = document.querySelector(
-      `[data-teams-left-for="${cssEscape(participant.participantName)}"]`
-    );
-    const nextMatchCell = document.querySelector(
-      `[data-next-match-for="${cssEscape(participant.participantName)}"]`
-    );
-    const runCell = document.querySelector(
-      `[data-run-for="${cssEscape(participant.participantName)}"]`
-    );
-
-    if (teamsLeftCell) {
-      teamsLeftCell.textContent = String(participant.teamsLeft);
-    }
-
-    if (nextMatchCell) {
-      nextMatchCell.replaceChildren(renderNextMatch(participant.nextMatch));
-    }
-
-    if (runCell) {
-      runCell.textContent = participant.runSummary;
-    }
-  }
-}
-
-function renderNextMatch(match) {
-  const element = document.createElement('span');
-  element.className = 'next-match';
-
-  if (!match) {
-    element.textContent = 'No upcoming match';
-    return element;
-  }
-
-  element.textContent = matchTitle(match);
-  return element;
-}
-
 function nextMatchTime(match) {
   return match ? new Date(match.utcDate).getTime() : Number.MAX_SAFE_INTEGER;
 }
@@ -623,41 +607,6 @@ function formatLiveMinute(match) {
   return `Live ${match.minute}${injuryTime}'`;
 }
 
-function renderNationStatuses(nations) {
-  let activeCount = 0;
-  let eliminatedCount = 0;
-
-  for (const team of nations) {
-    const chip = document.querySelector(
-      `[data-nation-status="${cssEscape(team.nation.name)}"]`
-    );
-
-    if (!chip) {
-      continue;
-    }
-
-    chip.classList.toggle('eliminated', team.status === 'eliminated');
-    chip.classList.toggle('active', team.status === 'active');
-    chip.title =
-      team.status === 'eliminated' ? 'Eliminated' : 'Still in the cup';
-
-    if (team.status === 'eliminated') {
-      eliminatedCount += 1;
-    } else {
-      activeCount += 1;
-    }
-  }
-
-  const summary = document.querySelector('#nation-status-summary');
-
-  if (summary) {
-    summary.textContent =
-      eliminatedCount > 0
-        ? `${activeCount} active, ${eliminatedCount} out`
-        : `${activeCount} nations active`;
-  }
-}
-
 function renderFlagImage(flagImageUrl, team) {
   const image = document.createElement('img');
   image.className = 'flag-img';
@@ -713,14 +662,6 @@ function formatCountdown(milliseconds) {
   }
 
   return `${seconds}s`;
-}
-
-function cssEscape(value) {
-  if ('CSS' in globalThis && typeof globalThis.CSS.escape === 'function') {
-    return globalThis.CSS.escape(value);
-  }
-
-  return value.replaceAll('"', '\\"');
 }
 
 function getRefreshDelay(payload) {

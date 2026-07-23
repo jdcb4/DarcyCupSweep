@@ -89,6 +89,7 @@ img {
 
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -128,6 +129,50 @@ img {
     url('/assets/world-cup-dashboard.png') center / cover;
   border-radius: var(--radius-panel);
   overflow: hidden;
+}
+
+.landing-hero,
+.archive-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  min-height: 150px;
+  padding: 18px;
+  color: var(--text-on-strong);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(23 39 31 / 0.96),
+      rgb(23 39 31 / 0.76),
+      rgb(23 39 31 / 0.5)
+    ),
+    url('/assets/world-cup-dashboard.png') center / cover;
+  border: 1px solid rgb(72 199 142 / 0.18);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.landing-hero h1,
+.archive-hero h1 {
+  font-size: clamp(2.3rem, 6vw, 4.4rem);
+}
+
+.landing-hero .summary,
+.archive-hero p {
+  max-width: 600px;
+  color: rgb(247 255 244 / 0.78);
+}
+
+.mode-pill {
+  align-self: start;
+  padding: 6px 9px;
+  color: var(--surface-base);
+  background: var(--accent-secondary);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: capitalize;
 }
 
 .dashboard-header img {
@@ -266,9 +311,47 @@ h2 {
   font-weight: 800;
 }
 
+.next-sweep-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin: 12px 0;
+  padding: 16px;
+  background:
+    linear-gradient(90deg, rgb(72 199 142 / 0.14), transparent 58%),
+    var(--surface-raised);
+  border: 1px solid rgb(72 199 142 / 0.28);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+
+.next-sweep-banner p {
+  margin: 7px 0 0;
+  color: var(--text-secondary);
+}
+
+.next-sweep-clock {
+  display: grid;
+  gap: 3px;
+  min-width: 190px;
+  text-align: right;
+}
+
+.next-sweep-clock strong {
+  font-size: clamp(1.55rem, 4vw, 2.35rem);
+  line-height: 1;
+}
+
+.next-sweep-clock span {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .spotlight-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
   margin: 12px 0;
 }
@@ -374,6 +457,16 @@ h2 {
   padding: 0 18px 18px;
 }
 
+.panel-footer-link {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  color: var(--accent-primary);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .panel-summary-note {
   margin: 0;
   color: var(--text-secondary);
@@ -464,7 +557,7 @@ h2 {
 .contender-card {
   display: grid;
   gap: 8px;
-  min-height: 142px;
+  min-height: 176px;
   padding: 12px;
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
@@ -472,11 +565,45 @@ h2 {
   box-shadow: var(--shadow-card);
 }
 
+.contender-card.has-prize {
+  border-color: rgb(224 184 79 / 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgb(224 184 79 / 0.08),
+    var(--shadow-card);
+}
+
 .contender-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.contender-header > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contender-badges {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.contender-prize {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 7px;
+  color: var(--surface-base);
+  background: var(--accent-secondary);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 900;
 }
 
 .left-pill,
@@ -533,34 +660,23 @@ h2 {
   border-style: dashed;
 }
 
-.contender-run {
+.contender-next,
+.contender-run,
+.contender-events {
   margin-top: auto;
   color: var(--text-secondary);
   font-size: 0.84rem;
 }
 
-table {
-  width: 100%;
-  min-width: 1040px;
-  border-collapse: collapse;
+.contender-next {
+  margin-top: 0;
+  color: var(--text-primary);
+  font-weight: 800;
 }
 
-th,
-td {
-  padding: 13px 12px;
-  text-align: left;
-  border-top: 1px solid var(--border-subtle);
-  vertical-align: middle;
-}
-
-thead th {
-  color: var(--text-secondary);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-}
-
-tbody th {
-  width: 160px;
+.contender-events {
+  margin-top: 0;
+  color: rgb(224 184 79 / 0.88);
 }
 
 .participant-name {
@@ -646,19 +762,6 @@ tbody th {
   background-position: 100% 100%;
 }
 
-.team-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.team-list li {
-  display: inline-flex;
-}
-
 .country-card,
 .empty-state {
   display: inline-flex;
@@ -711,26 +814,6 @@ tbody th {
 
 .empty-state {
   color: var(--text-secondary);
-}
-
-.detail-table-panel {
-  margin-top: 4px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-control);
-}
-
-.detail-table-panel > summary {
-  padding: 10px 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 800;
-  list-style-position: inside;
-}
-
-.detail-table-panel .table-wrap {
-  padding: 0 12px 12px;
 }
 
 .side-panel {
@@ -888,8 +971,7 @@ tbody th {
   line-height: 1.1;
 }
 
-.match-owners,
-.next-match {
+.match-owners {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
@@ -897,54 +979,6 @@ tbody th {
 .match-owners {
   padding-top: 8px;
   border-top: 1px solid var(--border-subtle);
-}
-
-.nation-statuses {
-  margin-top: 0;
-}
-
-.nation-status-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.status-chip {
-  position: relative;
-  justify-content: flex-start;
-  min-width: 0;
-  min-height: 58px;
-  padding: 0;
-  overflow: hidden;
-  background: var(--surface-card);
-  font-size: 0.84rem;
-  font-weight: 800;
-}
-
-.status-chip .flag-img {
-  width: 58px;
-  height: 58px;
-  border: 0;
-  border-radius: 0;
-  opacity: 0.92;
-  mask-image: linear-gradient(90deg, #000 0%, #000 62%, transparent 100%);
-}
-
-.status-chip > span {
-  min-width: 0;
-  padding: 0 10px 0 2px;
-}
-
-.status-chip.eliminated {
-  color: var(--text-secondary);
-  opacity: 0.48;
-  filter: grayscale(1);
-  text-decoration: none;
-}
-
-.status-chip.active {
-  border-color: var(--accent-primary);
-  box-shadow: inset 0 0 0 1px rgb(72 199 142 / 0.18);
 }
 
 .empty-copy {
@@ -957,6 +991,10 @@ tbody th {
 }
 
 .schedule-shell {
+  max-width: 1040px;
+}
+
+.sweeps-shell {
   max-width: 1040px;
 }
 
@@ -986,6 +1024,186 @@ tbody th {
 .schedule-list {
   display: grid;
   gap: 18px;
+}
+
+.landing-grid,
+.archive-results {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.landing-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.archive-winner {
+  display: grid;
+  gap: 5px;
+  min-width: 260px;
+  padding: 14px;
+  background: rgb(9 15 13 / 0.54);
+  border: 1px solid rgb(224 184 79 / 0.36);
+  border-radius: var(--radius-panel);
+  text-align: right;
+}
+
+.archive-winner span,
+.archive-winner small {
+  color: var(--text-secondary);
+}
+
+.archive-winner strong {
+  font-size: 1.2rem;
+  line-height: 1.12;
+}
+
+.archive-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.archive-rules span {
+  padding: 5px 8px;
+  color: var(--surface-base);
+  background: var(--accent-secondary);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.archive-participant-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-card);
+}
+
+.archive-participant-card.is-winner {
+  border-color: rgb(224 184 79 / 0.58);
+  box-shadow:
+    inset 0 0 0 1px rgb(224 184 79 / 0.12),
+    var(--shadow-card);
+}
+
+.archive-participant-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.archive-participant-heading strong {
+  margin-right: auto;
+  font-size: 1.08rem;
+}
+
+.archive-participant-heading > span:last-child {
+  color: var(--accent-secondary);
+  font-weight: 900;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 8px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.archive-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.archive-entry-card {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  min-height: 74px;
+  padding: 8px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+
+.archive-entry-card.has-prize {
+  border-color: rgb(224 184 79 / 0.42);
+}
+
+.archive-entry-card > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.archive-entry-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-entry-card small {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.sweeps-panel + .sweeps-panel {
+  margin-top: 16px;
+}
+
+.sweep-card-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sweep-card-list.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sweep-card {
+  display: grid;
+  gap: 6px;
+  min-height: 126px;
+  padding: 14px;
+  color: inherit;
+  background:
+    linear-gradient(135deg, rgb(72 199 142 / 0.1), transparent 54%),
+    var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  text-decoration: none;
+}
+
+.sweep-card:hover {
+  border-color: var(--accent-primary);
+}
+
+.sweep-card span,
+.sweep-card small {
+  color: var(--text-secondary);
+}
+
+.sweep-card strong {
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.sweep-card.planned {
+  background: var(--surface-sunken);
 }
 
 .schedule-day {
@@ -1210,12 +1428,18 @@ button:not(.nation-chip) {
 
 @media (max-width: 860px) {
   .dashboard-header,
+  .landing-hero,
+  .archive-hero,
   .draw-countdown,
+  .next-sweep-banner,
   .content-grid,
   .spotlight-grid,
   .countdown-grid,
   .admin-grid,
-  .schedule-day-grid {
+  .schedule-day-grid,
+  .archive-entry-grid,
+  .sweep-card-list,
+  .sweep-card-list.compact {
     grid-template-columns: 1fr;
   }
 
@@ -1224,6 +1448,11 @@ button:not(.nation-chip) {
   }
 
   .schedule-meta {
+    text-align: left;
+  }
+
+  .archive-winner {
+    min-width: 0;
     text-align: left;
   }
 
@@ -1268,6 +1497,11 @@ button:not(.nation-chip) {
   }
 
   .draw-countdown-clock {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .next-sweep-clock {
     min-width: 0;
     text-align: left;
   }
@@ -1322,8 +1556,7 @@ button:not(.nation-chip) {
     padding: 0 14px 14px;
   }
 
-  .pre-sweep-roster,
-  .nation-status-list {
+  .pre-sweep-roster {
     grid-template-columns: 1fr;
   }
 

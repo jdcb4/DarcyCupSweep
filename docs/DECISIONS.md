@@ -151,3 +151,23 @@ Durable architecture and tooling decisions. Use ADR-lite format: each entry is d
 **Rejected alternatives:** Keeping OpenFootball as the default was rejected because it updates post-game and may lag. Replacing API-FOOTBALL entirely was rejected because it remains a possible paid near-real-time provider.
 
 **Supersedes:** 2026-06-05: API-FOOTBALL as primary live-results provider
+
+## 2026-07-23: Private multi-sweep hoster direction
+
+**Decision:** Evolve the app toward a private multi-sweep hoster with one primary configured sweep at a time, publicly browsable previous sweeps, reusable participants, and planned future events.
+
+**Reasoning:** The user wants to reuse the app for future sports sweeps, especially the 2026 AFL Grand Final and the 2027 Women's FIFA World Cup, while keeping the app private and admin-only. A lightweight event catalogue gives the landing page and history page enough structure without forcing a risky rewrite of the current production World Cup state.
+
+**Rejected alternatives:** A fully generic public sweep platform was rejected because other users do not need to create sweeps. A full persistence migration was rejected for this pass because the existing Postgres JSONB state is stable and the next sweep formats still need details.
+
+**Supersedes:** 2026-06-05: Initial project identity
+
+## 2026-07-23: Outcome-only archives between sweeps
+
+**Decision:** Treat completed sweeps as outcome archives instead of keeping historical match lists in the current public schedule pages.
+
+**Reasoning:** The current app is between sweeps. The public landing page should not continue presenting old World Cup fixture/result panels as if they are current. Outcome archives preserve the data people need later: participant allocations, entry outcomes, and prize totals.
+
+**Rejected alternatives:** Keeping `/matches` and `/finalised-matches` pointed at the old World Cup was rejected because it makes the app look like the previous sweep is still current. Archiving every individual match was rejected because the user only needs enough data to reconstruct outcomes and share result graphics.
+
+**Supersedes:** N/A

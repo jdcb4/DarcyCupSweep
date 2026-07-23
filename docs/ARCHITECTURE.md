@@ -4,11 +4,11 @@ This document describes the project's runtime shape and module boundaries.
 
 ## Runtime shape
 
-- App type: web app with JSON API endpoints.
+- App type: private sweep-hosting web app with JSON API endpoints.
 - Framework/runtime: Hono on Node.js with strict TypeScript.
 - Package manager: pnpm.
 - Deployment target: Railway from GitHub.
-- Persistence model: Postgres JSONB app state when `DATABASE_URL` is set; local JSON fallback in `src/data/sweep.json`.
+- Persistence model: Postgres JSONB app state when `DATABASE_URL` is set; local JSON fallback in `src/data/sweep.json`. The current saved document still preserves the old World Cup admin allocation state, but the public app is in `between_sweeps` mode and reads archived World Cup outcomes from `src/data/sweepArchives.ts`.
 - Admin: `/admin` is protected by HTTP Basic authentication using `ADMIN_PASSWORD`.
 - External data boundary: World Cup results are loaded through `src/services/worldCupProvider.ts`. football-data.org is the default free provider; mock, OpenFootball, and API-FOOTBALL remain selectable alternatives.
 - Results cache: `src/services/worldCupSnapshotService.ts` keeps a cached snapshot and runs provider-specific server-side polling when the server starts.
@@ -39,9 +39,19 @@ When `DATABASE_URL` is set, the repository reads and writes the `sweep` document
 
 Railway filesystem writes should be treated as operationally temporary across deploys/restarts, so Railway should use Postgres for admin-managed allocation data.
 
+## Sweep catalogue
+
+The public app now has a lightweight sweep catalogue for a private one-admin hoster. `src/data/sweepEvents.ts` lists completed and planned sweeps, including the completed 2026 Football World Cup sweep, the planned 2026 AFL Grand Final player sweep, and the planned 2027 Women's FIFA World Cup team sweep.
+
+This is deliberately not a full persistence migration yet. The catalogue supports the landing-page next-sweep message and `/sweeps` history page while preserving the existing production allocation/result data shape. A later migration can move events, allocations, participants, and results into relational or JSONB per-sweep documents.
+
+Future sweep formats should conceptually support both API-backed and manual result entry. Tournament-team sweeps can continue using provider snapshots, while one-off player sweeps can add authenticated manual result entry without requiring an external API.
+
 ## Tracking
 
-`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking. It derives teams left, each participant's next match, all upcoming matches, all finalised matches, dashboard-limited match/result previews, live score fields, match ownership, and active or eliminated nation status.
+`src/domain/tracking.ts` combines the configured sweep, fixture snapshot, and 48-nation metadata into UI-ready participant and nation tracking for active tournament sweeps. It derives teams left, each participant's next match, all upcoming matches, all finalised matches, dashboard-limited match/result previews, live score fields, match ownership, and active or eliminated nation status.
+
+`src/domain/playerSweep.ts` contains the first non-tournament template rule: single-match player sweeps can award separate first-goal-scorer and Norm Smith Medalist prizes. If the same player wins both events, both prize amounts are paid to that player's owner.
 
 ## Validation
 

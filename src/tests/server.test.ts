@@ -9,13 +9,20 @@ describe('server', () => {
     expect(await response.json()).toEqual({ ok: true });
   });
 
-  it('renders the dashboard', async () => {
+  it('renders the between-sweeps landing page without sweep dashboard data', async () => {
     const response = await app.request('/');
     const html = await response.text();
 
     expect(response.status).toBe(200);
-    expect(html).toContain('World Cup Sweep Tracker');
-    expect(html).toContain('Darcy');
+    expect(html).toContain('Darcy Cup Sweep Tracker');
+    expect(html).toContain('Sweep HQ');
+    expect(html).toContain('Next sweep');
+    expect(html).toContain('2026 AFL Grand Final');
+    expect(html).toContain('2027 Women&#039;s FIFA World Cup');
+    expect(html).not.toContain('data-api-path');
+    expect(html).not.toContain('Prize leader');
+    expect(html).not.toContain('Latest result');
+    expect(html).not.toContain('Next match');
   });
 
   it('renders demo scenarios without touching persisted sweep state', async () => {
@@ -35,26 +42,48 @@ describe('server', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('renders the all upcoming matches page', async () => {
+  it('renders an empty current upcoming matches page between sweeps', async () => {
     const response = await app.request('/matches');
     const html = await response.text();
 
     expect(response.status).toBe(200);
-    expect(html).toContain('All Upcoming Matches | World Cup Sweep Tracker');
-    expect(html).toContain('All upcoming matches');
-    expect(html).toContain('Australian Eastern time');
-    expect(html).toContain('/assets/matches.js');
+    expect(html).toContain('No active sweep schedule');
+    expect(html).not.toContain('/assets/matches.js');
+    expect(html).not.toContain('data-api-path');
   });
 
-  it('renders the all finalised matches page', async () => {
+  it('renders an empty current finalised matches page between sweeps', async () => {
     const response = await app.request('/finalised-matches');
     const html = await response.text();
 
     expect(response.status).toBe(200);
-    expect(html).toContain('All Finalised Matches | World Cup Sweep Tracker');
-    expect(html).toContain('All finalised matches');
-    expect(html).toContain('data-schedule-mode="finalised"');
-    expect(html).toContain('/assets/matches.js');
+    expect(html).toContain('No current sweep results');
+    expect(html).not.toContain('/assets/matches.js');
+    expect(html).not.toContain('data-api-path');
+  });
+
+  it('renders the sweep history page', async () => {
+    const response = await app.request('/sweeps');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain('Previous sweeps');
+    expect(html).toContain('2026 Football World Cup');
+    expect(html).toContain('2026 AFL Grand Final');
+  });
+
+  it('renders archived World Cup outcomes without match panels', async () => {
+    const response = await app.request('/sweeps/2026-football-world-cup');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain('Archived outcome');
+    expect(html).toContain('Mitch won $850 with Spain');
+    expect(html).toContain('Colombia');
+    expect(html).toContain('Round of 16');
+    expect(html).not.toContain('Most recent result');
+    expect(html).not.toContain('All finalised matches');
+    expect(html).not.toContain('/assets/app.js');
   });
 
   it('does not expose the manual provider refresh action without admin configuration', async () => {

@@ -2,6 +2,23 @@
 
 Notable changes by version. Newest entries go at the top.
 
+## 0.14.0 - 2026-07-23
+
+- Changed `/` into a between-sweeps landing page that does not load World Cup standings, fixtures, results, or `/api/sweep`.
+- Made current `/matches` and `/finalised-matches` show neutral empty states while no sweep is active.
+- Added an outcome-only archive for the completed 2026 Football World Cup sweep with participant prizes, country allocations, and exit stages.
+- Added the single-match player sweep prize model for AFL Grand Final-style sweeps, including first goal scorer and Norm Smith Medalist prize events.
+- Removed duplicate next/latest match spotlights from the tournament dashboard renderer retained for demos and future active sweeps.
+
+## 0.13.0 - 2026-07-23
+
+- Added a lightweight multi-sweep catalogue with next planned sweeps for the 2026 AFL Grand Final and 2027 Women's FIFA World Cup.
+- Added `/sweeps` for previous sweep history and linked the completed 2026 Football World Cup sweep to its full results view.
+- Added a landing-page next-sweep countdown/message.
+- Simplified the dashboard to one next match and one most recent result, linking to the full upcoming and finalised match pages.
+- Combined the detailed tracking table into richer participant leaderboard cards and removed the public Nations panel.
+- Added a shareable-image design contract for allocation and final-result exports.
+
 ## 0.12.2 - 2026-07-10
 
 - Fixed prize calculation so champion and runner-up prizes are only paid for the actual grand final, not quarter-finals or semi-finals.
